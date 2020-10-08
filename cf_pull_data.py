@@ -28,14 +28,15 @@ target_data = []
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
-os.chdir(dname)
+os.chdir(dname+'\\..\\')
 
 sys.path.append('/KINARMAnalysisScriptsv3')
-# data_directory = '4_Target_Data' # Change this to determine which data set to use
+# exp_name = '4_Target_Data' # Change this to determine which data set to use
 # file_name = 'vigor_conf_postsqueeze_4targetpilot.pickle'
 
 exp_name = '4t_180trial_4block' # Change this to determine which data set to use
 file_name = 'vigor_conf_postsqueeze_'+exp_name+'.pickle'
+
 os.chdir(exp_name+'/Data')
 already_pulled = []
 if path.exists(file_name):

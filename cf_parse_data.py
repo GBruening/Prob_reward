@@ -12,7 +12,7 @@ import pickle
 from cf_functions import *
 
 # These need to be changed in cf_pull_data.py as well
-# data_directory = '4_Target_Data' # Change this to determine which data set to use
+# exp_name = '4_Target_Data' # Change this to determine which data set to use
 # file_name = 'vigor_conf_postsqueeze_4targetpilot.pickle'
 # confdata_file_name = 'vigor_conf_4t'
 
@@ -22,7 +22,7 @@ confdata_file_name = 'vigor_conf_4t_180trial_4block'
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
-os.chdir(dname)
+os.chdir(dname+'\\..\\')
 
 os.chdir(exp_name+'/Data')
 with open(file_name,'rb') as f:
