@@ -362,6 +362,21 @@ def squeezin2(data, mltype, n_call):
     return data, n_call
 
 def est_p(data):
+    """Determines estimated probability of reward for each trial/block.
+
+    Calculated the average block probabilities of reward and also uses a perfect observer model to estimate reward probabilities.
+
+    Parameters
+    ----------
+    data : list/dict
+        Subject dataframe to get probabilities of reward for each trial.
+
+    Returns
+    ----------
+    data
+        Updated data set.
+
+    """
     n_shown = [0,0,0,0]
     n_rewarded = [0,0,0,0]
     r_trials = []
@@ -398,9 +413,6 @@ def est_p(data):
                 for item in known_probs:
                     block_probs[block-1][np.argmin(np.abs(np.array(n_rewarded)/np.array(n_shown)-item))] = item
                     prob_err[block-1][np.argmin(np.abs(np.array(n_rewarded)/np.array(n_shown)-item))] = np.min(np.abs(np.array(n_rewarded)/np.array(n_shown)-item))
-    # print('Block Probs err are:')
-    # print(block_probs)
-    # print(prob_err)
     data[trial].update({'block_probs': block_probs,
                         'prob_err': prob_err})
 
@@ -416,7 +428,6 @@ def est_p(data):
             trial_in_block = (k-16) % 180
             if trial_in_block == 0:
                 block += 1
-            # print('Target: '+str(int(data[trial]['TRIAL']['TP'])))
             # Estimate the reward using some custom algorithm
             target = int(data[trial]['TRIAL']['TP'])
             n_shown[int(target)-1] += 1
