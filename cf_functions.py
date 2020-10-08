@@ -469,6 +469,22 @@ def est_p(data):
     return data
 
 def calc_errors(data, target_data):
+    """Calculate movement error metrics.
+
+    Parameters
+    ----------
+    data : list/dict
+        Movement data set.
+
+    target_data : dict
+        Target positions.
+
+    Returns
+    ----------
+    data
+        Appended dataset with error metrics.
+    """
+    
     # Data should be a single trial
     # Calc endpoint error
     x_cross, y_cross = data['X'][data['vigor']['idx']['at_target']],\
@@ -515,6 +531,19 @@ def calc_errors(data, target_data):
     return data
 
 def get_v_sign(data):
+    """Re assign outward velocity and towards target velocities.
+
+    Parameters
+    ----------
+    data : list/dict
+        Movement data set.
+
+    Returns
+    ----------
+    data
+        Appended dataset with redone velocities.
+    """
+    
     data.update({'rad_v': np.diff(data['P']),
                  'px_sign': np.array(data['Right_HandX']),
                  'py_sign': np.array(data['Right_HandY']),
@@ -540,6 +569,15 @@ def get_v_sign(data):
     return data
 
 def traj_check(data):
+    """Checker function to make sure trajectories make sense.
+
+    Plots movement trajectories along with indexes of events. Mainly used to check that the movement is valid.
+
+    Parameters
+    ----------
+    data : list/dict
+        Movement data set.
+    """
     import matplotlib.pyplot as plt
     from matplotlib.patches import Patch
     from matplotlib.lines import Line2D
