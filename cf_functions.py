@@ -429,6 +429,8 @@ def est_p(data):
                 block += 1
             b_trials[block-1].append(k)
 
+    # Compute the block probailities and add to the dataset.
+    # This will only be one of 4 probabilites.
     block = 0
     known_probs = [1, .66, .33, 0]
     block_probs = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
@@ -454,6 +456,7 @@ def est_p(data):
     data[trial].update({'block_probs': block_probs,
                         'prob_err': prob_err})
 
+    # Compute the prefect observer probabilites
     block = 0
     for k, trial in enumerate(data):
         if k < 16:
