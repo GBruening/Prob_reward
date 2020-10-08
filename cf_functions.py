@@ -3,7 +3,45 @@
 import numpy as np
 from scipy.signal import butter, lfilter
 
-def butter_lowpass_filter(data, cutoff, fs, order=5):
+def filterin(out, filt_vars):
+    """Filters using the butterworth filter.
+
+    Parameters
+    ----------
+    out : list
+        The list of things to be squeezed.
+
+    filt_vars : list or dict
+        The keys to out.
+
+    Returns
+    ----------
+    out : list
+        The squeezed list.
+    """
+    for var in filt_vars:
+        out[var] = butter_lowpass_filter(out[var], 5, 1000, 5)
+    return out
+
+def butter_lowpass_filter(data, cutoff = 5, fs = 1000, order=5):
+    """A function to run a butterworth lowpas filter.
+
+    Parameters
+    ----------
+    data : list
+        The data to be filtered.
+
+    cutoff : double
+        The cuttoff frequency for the filter (default is 5)
+
+    fs : double
+        Sample frequency (default is 1000 for Kinarm)
+
+    Returns
+    ----------
+    y : list
+        The filtered data.
+    """
     nyq = 0.5 * fs
     normal_cutoff = cutoff / nyq
     b, a = butter(order, normal_cutoff,
@@ -13,17 +51,24 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
     y = lfilter(b, a, data)
     return y
 
-def squeezin(out, objs):
-    for obj in objs:
-        out[obj] = np.squeeze(out[obj])
-    return out
-
-def filterin(out, filt_vars):
-    for var in filt_vars:
-        out[var] = butter_lowpass_filter(out[var], 5, 1000, 5)
-    return out
-
 def shift_x(data, target_data):
+    """Shifts the x and y values to set [0,0] at the home circle.
+
+    It will compute new x and y values of the cursor position so that the home cicle is at [0,0]. All positional data should be off of this now.
+
+    Parameters
+    ----------
+    data : list
+        Positional data.
+
+    target_data : list
+        Target data.
+
+    Returns
+    ----------
+    data : list
+        Shifted/transformed positional data.
+    """
     x = data['Right_HandX']
     y = data['Right_HandY']
     x_home = target_data['TARGET_TABLE']['X_GLOBAL'][0]/100
@@ -36,6 +81,22 @@ def shift_x(data, target_data):
     return data
 
 def t_dist(data, target_data):
+    """Computes the distance between the hand and target.
+
+    Parameters
+    ----------
+    data : list
+        Positional data.
+
+    target_data : list
+        Target data.
+
+    Returns
+    ----------
+    data : list
+        Shifted/transformed positional data.
+    """
+
     if 'X' not in data.keys():
         data = shift_x(data, target_data)
 
@@ -56,6 +117,42 @@ def t_dist(data, target_data):
     return data
 
 def get_mvttimes(data, target_data):
+    """Determines the movement time and indexes of when specific events occur within the movement.
+
+    Parameters
+    ----------
+    data : list
+        Positional data.
+
+    target_data : list
+        Target data.
+
+    Events
+    ----------
+    idx_targetshow
+        When the target initially appears.
+
+    idx_onset
+        When the subject begins moving.
+
+    idx_peakv
+        Peak velocity index.
+
+    idx_attarget
+        When subject first hits the target.
+
+    idx_moveback
+        When the subject begins moving back.
+
+    idx_offset
+        When the subject stops moving.
+
+    Returns
+    ----------
+    vigor : Dict
+        Indexes for events.
+    """
+
     # Shift the data and calculate target locations if you haven't
     if 'X' not in data.keys():
         print('shifting')
@@ -77,7 +174,7 @@ def get_mvttimes(data, target_data):
     # Determine index's for spcific points
     vigor.update({'idx': {}})
 
-    # Get when the target showed up
+    # Find target show.
     data['EVENTS']['TIMES'] = np.squeeze(data['EVENTS']['TIMES'])
     for k, item in enumerate(data['EVENTS']['LABELS']):
         if item[0:9] == 'TARGET_ON':
@@ -89,40 +186,28 @@ def get_mvttimes(data, target_data):
     else:
         idx_targetshow = 0
     
-    # print(max(P))
+    # Find movement onset.
     if max(P[idx_targetshow:]) > 0.05:
-        # print('going here')
         b = next(i for i, p in enumerate(P[idx_targetshow:]) if p > .05)
     elif max(P[idx_targetshow:]) > 0.025:
-        # print('going 2')
         b = next(i for i, p in enumerate(P[idx_targetshow:]) if p > .025)
-        # for i, p in enumerate(P[idx_targetshow:]):
-        #     if p > 0.025:
-        #         b = i
-        #         break
     else:
         print('going 3')
         maxp = max(P[idx_targetshow:])
         b = next(i for i, p in enumerate(P[idx_targetshow:]) if p > 0.75*maxp)
-        # for i, p in enumerate(P[idx_targetshow:]):
-        #     if p > 0.75*maxp:
-        #         b = i
-        #         break
 
     b += idx_targetshow
     a = b
     for idx_onset in np.arange(b,50,-1):
         if np.std(t_diff[idx_onset-50:idx_onset])<2e-3 and v[idx_onset]<.03:
-            # print(np.std(t_diff[idx_onset-100:idx_onset]))
-            # print('idx = '+str(idx_onset)+'. std: '+ str(np.std(t_diff[b-40:b])))
             break
     try:
         idx_onset += 0
-        # idx_onset += -100
     except:
         print('Didn\'t find onset')
         idx_onset = b
 
+    # This is a plot checker. Generally uneeded.
     # if np.mean(P[idx_onset-50:idx_onset])>.01:
     #     import matplotlib.pyplot as plt
     #     plt.plot(P)
@@ -134,8 +219,10 @@ def get_mvttimes(data, target_data):
     #     plt.plot(x[idx_onset],y[idx_onset],'x',markersize=10,color = 'red')
     #     plt.show()
 
+    # Find peak velocity.
     idx_peakv = np.argmax(v)
     
+    # Find at target.
     if max(P) > 0.1:
         idx_attarget = next(i for i, p in enumerate(P[a:-1]) if p > 0.10)+a
     elif min(data['t_dist']) < 0.04:
@@ -145,6 +232,7 @@ def get_mvttimes(data, target_data):
     else:
         idx_attarget = np.argmax(P)
 
+    # Find moveback.
     try:
         idx_moveback = next(i for i, d in enumerate(P[idx_attarget:]) if P[i+idx_attarget]<P[i-1+idx_attarget])+idx_attarget
     except:
@@ -182,7 +270,7 @@ def get_mvttimes(data, target_data):
                          'target_show': idx_targetshow,
                          'move_back': idx_moveback})
 
-    # if data['Right_HandVel'][vigor['idx']['onset']] > 0.01:
+    # Another plot checker.
     # if react_time<.1:
     #     import matplotlib.pyplot as plt
     #     fig, (ax1,ax2) = plt.subplots(2,1)
@@ -206,6 +294,26 @@ def get_mvttimes(data, target_data):
     return vigor
    
 def pull_vars(data, small_data, vars):
+    """Pulls specific variables out of data and into small_data.
+
+    Parameters
+    ----------
+    data : dict
+        The pulled data from the matlab engine. Its large so we only pull specific variables.
+
+    small_data : dict
+        Individual subject data that gets appended for every subject.
+
+    vars : list
+        List of the variables to pull from data.
+
+    Returns
+    ----------
+    small_data
+        Updated data set.
+
+    """
+
     for trial in data:
         small_data.update({str(trial): {}})
         for obj in vars:
@@ -440,3 +548,23 @@ def traj_check(data):
         ax.set_xticklabels(ax1.get_xticks()/1000)
 
     plt.tight_layout()
+
+def squeezin(out, objs):
+    """Squeezes a list or dictionary and all elements underneath. Not used anymore, recursive squeezin2 is uesd.
+
+    Parameters
+    ----------
+    out : list
+        The list of things to be squeezed.
+
+    objs : list or dict
+        The keys to out.
+
+    Returns
+    ----------
+    out : list
+        The squeezed list.
+    """
+    for obj in objs:
+        out[obj] = np.squeeze(out[obj])
+    return out
