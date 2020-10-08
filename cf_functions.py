@@ -2,6 +2,74 @@
 
 import numpy as np
 from scipy.signal import butter, lfilter
+  
+def pull_vars(data, small_data, vars):
+    """Pulls specific variables out of data and into small_data.
+
+    Parameters
+    ----------
+    data : dict
+        The pulled data from the matlab engine. Its large so we only pull specific variables.
+
+    small_data : dict
+        Individual subject data that gets appended for every subject.
+
+    vars : list
+        List of the variables to pull from data.
+
+    Returns
+    ----------
+    small_data
+        Updated data set.
+
+    """
+
+    for trial in data:
+        small_data.update({str(trial): {}})
+        for obj in vars:
+            small_data[trial].update({obj: data[trial][obj]})
+        small_data[trial].update({'Reward_prob': data[trial]['TP_TABLE']['Reward_prob']})
+    return small_data
+
+def squeezin2(data, mltype, n_call):
+    """Rercursively squeezes the entire object.
+
+    This is used to remove the matlab data type from any and all parts of the dataset. Recrusively goes into each element and squeezes (numpy) to convert it to a numpy array.
+
+    Parameters
+    ----------
+    data : list/dict
+        The data set to squeeze.
+
+    mltype : data type
+
+    n_call : int
+
+    Returns
+    ----------
+    data
+        Either the sub list/dict or the squeezed data.
+
+    n_call
+        Tracker for how many times this gets called.
+
+    """
+    if isinstance(data,dict): 
+        # Could make better by fixing the next line along with the line after the elif.
+        for k, item in enumerate(data):
+            if isinstance(data[item],mltype):
+                data[item] = np.squeeze(data[item])
+            else:
+                n_call += 1
+                data[item], n_call = squeezin2(data[item], mltype, n_call)
+    elif isinstance(data,list):
+        for k, item in enumerate(data):
+            if isinstance(data[k],mltype):
+                data[k] = np.squeeze(data[k])
+            else:
+                n_call += 1
+                data[k], n_call = squeezin2(data[k], mltype, n_call)
+    return data, n_call
 
 def filterin(out, filt_vars):
     """Filters using the butterworth filter.
@@ -50,6 +118,44 @@ def butter_lowpass_filter(data, cutoff = 5, fs = 1000, order=5):
 
     y = lfilter(b, a, data)
     return y
+
+def get_v_sign(data):
+    """Re assign outward velocity and towards target velocities.
+
+    Parameters
+    ----------
+    data : list/dict
+        Movement data set.
+
+    Returns
+    ----------
+    data
+        Appended dataset with redone velocities.
+    """
+    
+    data.update({'rad_v': np.diff(data['P']),
+                 'px_sign': np.array(data['Right_HandX']),
+                 'py_sign': np.array(data['Right_HandY']),
+                 'vx_sign': np.array(data['Right_HandXVel']),
+                 'vy_sign': np.array(data['Right_HandYVel']),
+                 'ax_sign': np.array(data['Right_HandXAcc']),
+                 'ay_sign': np.array(data['Right_HandYAcc']),
+                 'px_abs': np.abs(data['Right_HandX']),
+                 'py_abs': np.abs(data['Right_HandY']),
+                 'vx_abs': np.abs(data['Right_HandXVel']),
+                 'vy_abs': np.abs(data['Right_HandYVel']),
+                 'ax_abs': np.array(data['Right_HandXAcc']),
+                 'ay_abs': np.array(data['Right_HandYAcc'])})
+
+    v_sign = [v if k < data['vigor']['idx']['move_back'] else v*-1 for k, v in enumerate(data['Right_HandVel'])]
+    a_sign = [a if k < data['vigor']['idx']['move_back'] else a*-1 for k, a in enumerate(data['Right_HandAcc'])]
+    v_abs = [np.abs(v) for k, v in enumerate(data['Right_HandVel'])]
+    a_abs = [a for k, a in enumerate(data['Right_HandAcc'])]
+    data.update({'v_sign': np.array(v_sign),
+                 'a_sign': np.array(a_sign),
+                 'v_abs': np.array(v_abs),
+                 'a_abs': np.array(a_abs)})
+    return data
 
 def shift_x(data, target_data):
     """Shifts the x and y values to set [0,0] at the home circle.
@@ -292,74 +398,6 @@ def get_mvttimes(data, target_data):
                   'react_time': react_time,
                   'maxex': maxex})
     return vigor
-   
-def pull_vars(data, small_data, vars):
-    """Pulls specific variables out of data and into small_data.
-
-    Parameters
-    ----------
-    data : dict
-        The pulled data from the matlab engine. Its large so we only pull specific variables.
-
-    small_data : dict
-        Individual subject data that gets appended for every subject.
-
-    vars : list
-        List of the variables to pull from data.
-
-    Returns
-    ----------
-    small_data
-        Updated data set.
-
-    """
-
-    for trial in data:
-        small_data.update({str(trial): {}})
-        for obj in vars:
-            small_data[trial].update({obj: data[trial][obj]})
-        small_data[trial].update({'Reward_prob': data[trial]['TP_TABLE']['Reward_prob']})
-    return small_data
-   
-def squeezin2(data, mltype, n_call):
-    """Rercursively squeezes the entire object.
-
-    This is used to remove the matlab data type from any and all parts of the dataset. Recrusively goes into each element and squeezes (numpy) to convert it to a numpy array.
-
-    Parameters
-    ----------
-    data : list/dict
-        The data set to squeeze.
-
-    mltype : data type
-
-    n_call : int
-
-    Returns
-    ----------
-    data
-        Either the sub list/dict or the squeezed data.
-
-    n_call
-        Tracker for how many times this gets called.
-
-    """
-    if isinstance(data,dict): 
-        # Could make better by fixing the next line along with the line after the elif.
-        for k, item in enumerate(data):
-            if isinstance(data[item],mltype):
-                data[item] = np.squeeze(data[item])
-            else:
-                n_call += 1
-                data[item], n_call = squeezin2(data[item], mltype, n_call)
-    elif isinstance(data,list):
-        for k, item in enumerate(data):
-            if isinstance(data[k],mltype):
-                data[k] = np.squeeze(data[k])
-            else:
-                n_call += 1
-                data[k], n_call = squeezin2(data[k], mltype, n_call)
-    return data, n_call
 
 def est_p(data):
     """Determines estimated probability of reward for each trial/block.
@@ -528,44 +566,6 @@ def calc_errors(data, target_data):
                           'target_angle': target_angle,
                           'error_angle': error_angle})
 
-    return data
-
-def get_v_sign(data):
-    """Re assign outward velocity and towards target velocities.
-
-    Parameters
-    ----------
-    data : list/dict
-        Movement data set.
-
-    Returns
-    ----------
-    data
-        Appended dataset with redone velocities.
-    """
-    
-    data.update({'rad_v': np.diff(data['P']),
-                 'px_sign': np.array(data['Right_HandX']),
-                 'py_sign': np.array(data['Right_HandY']),
-                 'vx_sign': np.array(data['Right_HandXVel']),
-                 'vy_sign': np.array(data['Right_HandYVel']),
-                 'ax_sign': np.array(data['Right_HandXAcc']),
-                 'ay_sign': np.array(data['Right_HandYAcc']),
-                 'px_abs': np.abs(data['Right_HandX']),
-                 'py_abs': np.abs(data['Right_HandY']),
-                 'vx_abs': np.abs(data['Right_HandXVel']),
-                 'vy_abs': np.abs(data['Right_HandYVel']),
-                 'ax_abs': np.array(data['Right_HandXAcc']),
-                 'ay_abs': np.array(data['Right_HandYAcc'])})
-
-    v_sign = [v if k < data['vigor']['idx']['move_back'] else v*-1 for k, v in enumerate(data['Right_HandVel'])]
-    a_sign = [a if k < data['vigor']['idx']['move_back'] else a*-1 for k, a in enumerate(data['Right_HandAcc'])]
-    v_abs = [np.abs(v) for k, v in enumerate(data['Right_HandVel'])]
-    a_abs = [a for k, a in enumerate(data['Right_HandAcc'])]
-    data.update({'v_sign': np.array(v_sign),
-                 'a_sign': np.array(a_sign),
-                 'v_abs': np.array(v_abs),
-                 'a_abs': np.array(a_abs)})
     return data
 
 def traj_check(data):
