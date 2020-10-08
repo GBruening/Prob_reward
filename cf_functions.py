@@ -322,7 +322,30 @@ def pull_vars(data, small_data, vars):
     return small_data
    
 def squeezin2(data, mltype, n_call):
-    if isinstance(data,dict):
+    """Rercursively squeezes the entire object.
+
+    This is used to remove the matlab data type from any and all parts of the dataset. Recrusively goes into each element and squeezes (numpy) to convert it to a numpy array.
+
+    Parameters
+    ----------
+    data : list/dict
+        The data set to squeeze.
+
+    mltype : data type
+
+    n_call : int
+
+    Returns
+    ----------
+    data
+        Either the sub list/dict or the squeezed data.
+
+    n_call
+        Tracker for how many times this gets called.
+
+    """
+    if isinstance(data,dict): 
+        # Could make better by fixing the next line along with the line after the elif.
         for k, item in enumerate(data):
             if isinstance(data[item],mltype):
                 data[item] = np.squeeze(data[item])
