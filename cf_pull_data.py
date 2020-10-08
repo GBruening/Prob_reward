@@ -2,7 +2,7 @@
 cf_pull_data.py
 --------------------------------------------
 
-This script is used to  pull the data from the .zip files saved in the
+This script is used to pull the data from the .zip files saved in the
 experiment folder. It uses the matlab python engine to pull the data from the
 zip files and then uses python to squeeze the data into a numpy compatible
 format.

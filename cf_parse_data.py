@@ -1,3 +1,14 @@
+"""
+cf_parse_data.py
+--------------------------------------------
+
+This script is used to parse the data after it is pulled from the zip files.
+
+This script calculates all the movement vigor metrics used for analysis and then
+saves/writes the data into a csv for use in R for stats and plotting.
+
+"""
+
 #%%
 import matlab.engine as ml
 import os
@@ -32,7 +43,8 @@ with open(file_name,'rb') as f:
     del temp
     os.chdir('..')
 
-
+# Probably outdated, more a check to not use these files. Can be changed if we
+# want to exclude specific subjects.
 skip_files = ['Pilot_CK_4t_180trial_4block.zip',
               'Pilot_DA_4t_180trial_4block.zip',
               'Pilot_RC_4t_180trial_4block.zip',
@@ -51,16 +63,11 @@ trial_cutoff = 70
 save_data = 1
 
 # %% 
-# PUll out return peak velocities
-arr_data = {'subj': [], 'trial': [], 'P': [], 'V': [], 'A': []}
-
+# Iterate through the dataset and shift x, calculate distance to target,
+# determine the event indexs (get_mvttimes), and calculate errors.
 for s, subj_data in enumerate(cfdata):
     print('Analyzing subject '+str(s+1))
     for k, trial in enumerate(subj_data):
-        # print('Subj: '+str(s))
-        # print('Trial: '+trial)
-        # cfdata[s][trial] = squeezin(cfdata[s][trial], squeeze_vars)
-        # target_data['TARGET_TABLE'] = squeezin(target_data['TARGET_TABLE'],t_table_squeeze)
         subj_data[trial] = shift_x(subj_data[trial], target_data[s])
         subj_data[trial] = t_dist(subj_data[trial], target_data[s])
         subj_data[trial].update({'vigor': get_mvttimes(subj_data[trial],target_data[s])})
@@ -68,19 +75,10 @@ for s, subj_data in enumerate(cfdata):
         subj_data[trial] = calc_errors(subj_data[trial], target_data[s])
         if subj_data[trial]['TRIAL']['TP']>4:
             subj_data[trial]['TRIAL']['TP'] += -4
-
-        # # Used?
-        # arr_data['subj'].append(s)
-        # arr_data['trial'].append(k)
-        # idx_targetshow = subj_data[trial]['vigor']['idx']['target_show']
-        # idx_offset200 = subj_data[trial]['vigor']['idx']['offset']+200
-        # arr_data['P'].append(subj_data[trial]['P'][idx_targetshow:idx_offset200])
-        # arr_data['V'].append(subj_data[trial]['Right_HandVel'][idx_targetshow:idx_offset200])
-        # arr_data['A'].append(subj_data[trial]['Right_HandAcc'][idx_targetshow:idx_offset200])
-
     cfdata[s] = est_p(subj_data)
 
-# %% Remove Variables
+# %% 
+# Delete variables within the subject data so that it saves space.
 for s, subj_data in enumerate(cfdata):
     print('Rm Vars subject '+str(s+1))
     for k, trial in enumerate(subj_data):
@@ -95,7 +93,8 @@ for s, subj_data in enumerate(cfdata):
         for item in rm_vars:
             del subj_data[trial][item]
 
-#%% Save Data
+#%%
+# Save the data
 if save_data:
     os.chdir('Data')
     with open(confdata_file_name+'.pickle', 'wb') as f:
@@ -103,7 +102,8 @@ if save_data:
         pickle.dump([cfdata, target_data], f)
     os.chdir('..')
 
-#%% Put into a dataframe
+#%%
+# Put into a dataframe
 import pandas as pd
 rows = []
 for s, subj in enumerate(cfdata):
@@ -155,6 +155,7 @@ cfdf.columns = ['subj', #1
                 'react_pos' #20
                 ]
 #%%
+# Add targets to the data frame.
 targets = ['one','two','three','four']
 target_s = []
 for val in cfdf['target'].astype('int32'):
