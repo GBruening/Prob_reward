@@ -1,12 +1,3 @@
-# Does 33% change anything
-# is the effect the same as erik's?
-# Test between 0, 33, and 66
-
-# LME for 0,33,66 and 33,66,1
-# Probability matching, bimodal distributions?
-
-# Add beta distrubtion update
-
 library(ggplot2)
 library(ggthemes)
 library(lmtest)
@@ -422,6 +413,8 @@ for (prob_method in c('diff_prob')){
     lme_p_vals_t14_surprise = c()
     
     for (testing_var in testable_vars){
+      
+      #====================== Stats ================
       var_select = var_select + 1
       testing_data = filt_data[,c('subj','trial','trial_in_block','target','target_num','block','rewarded','t_since_reward','r_prob',prob_method,testing_var)]
       colnames(testing_data) = c('subj','trial','trial_in_block','target','target_num','block','rewarded','t_since_reward','r_prob','probability_metric', 'testing_var')
@@ -447,6 +440,7 @@ for (prob_method in c('diff_prob')){
       lme_p_vals_surprise = c(lme_p_vals_surprise,lme_test_surprise[[prob_method]][[norm_meth]][[testing_var]]$test$pvalues[5])
       lme_p_vals_t14_surprise = c(lme_p_vals_t14_surprise,lme_test_t14_surprise[[prob_method]][[norm_meth]][[testing_var]]$test$pvalues[5])
       
+      #====================== Violin Plot ================
       # Violin Plots
       a = aggregate(testing_var ~ probability_metric ,testing_data,mean)
       b = aggregate(testing_var ~ probability_metric ,testing_data,sd)#/sqrt(length(testing_data[,1]))
@@ -485,6 +479,7 @@ for (prob_method in c('diff_prob')){
         theme(legend.position = 'none')
       # facet_grid(cols = vars(subj))
       
+      #====================== Bar Plots ================
       # Bar plots for diff probability
       if (norm_meth == 'diff'){
         a = aggregate(testing_var ~ probability_metric, filter(testing_data,r_prob != 0), mean)
@@ -531,6 +526,8 @@ for (prob_method in c('diff_prob')){
       colnames(c) = c('probability_metric','testing_var','testing_var_sd')
       
     }
+    
+    #====================== Pval Plots ================
     p_vals = data.frame('var' = testable_vars, 'var_num' = c(1:length(testable_vars)), 'p_vals' = lme_p_vals_surprise)
     pval_plot <- ggplot()+
       geom_hline(yintercept =  0.05,
@@ -576,18 +573,3 @@ for (prob_method in c('diff_prob')){
   setwd('..')
 }
 
-# compare .67 to -.33
-# DO_NOVA_N_ARIABILITY_TUFF
-# Break up the 0 surprise factor into rewarded and non rewarded
-
-# anova(lm(peakvel ~ r_prob + (1|subj) + (1|subj), data = test))
-# anova(lm(peakvel ~ r_prob + (1|subj) + (1|target), data = test))
-# anova(lm(peakvel ~ r_prob + (1|subj*target), data = test))
-# anova(lm(peakvel ~ r_prob + (1|subj*target), data = filter(test,trial>20)))
-# 
-# cftest(lmer(peakvel ~ r_prob + (1|subj*target), data = fitler(test,trial>20)))
-# cftest(lmer(peakvel ~ r_prob + (1|subj*target), data = filter(test,trial>20)))
-# cftest(lmer(peakvel ~ r_prob + (1|subj)+(1|target), data = filter(test,trial>20)))
-# cftest(lmer(movedur ~ r_prob + (1|subj)+(1|target), data = filter(test,trial>20)))
-# 
-# cftest(lmer(movedur ~ react_time + (1|subj)+(1|target), data = filter(test,trial>20)))
