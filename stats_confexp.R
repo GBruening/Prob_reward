@@ -249,11 +249,6 @@ for (prob_method in c('r_prob','diff_prob')){
         geom_hline(yintercept = mean(filter(testing_data,probability_metric == 0)$testing_var),linetype='dashed',size=.5)+
         labs(x = 'Probability of Reward',
              y = testable_labels[var_select],
-             # title = paste('rmANOVA P-Value: ',
-             #               round(ano_res$`Pr(>F)`[1],digits = 4),
-             #               '\nOnly target 1/4: ',
-             #               round(ano_res_t14$`Pr(>F)`[1],digits = 4),
-             #               sep=''))+
              title = paste('LMER P-Value: ',
                            formatC(lme_test[[prob_method]][[norm_meth]][[testing_var]]$test$pvalues[5],format="e",digits = 3),
                            ', Slope: ',
@@ -293,11 +288,6 @@ for (prob_method in c('r_prob','diff_prob')){
         geom_hline(yintercept = mean(filter(testing_data,probability_metric == 0)$testing_var),linetype='dashed',size=.5)+
         labs(x = 'Probability of Reward',
              y = testable_labels[var_select],
-             # title = paste('rmANOVA P-Value: ',
-             #               round(ano_res$`Pr(>F)`[1],digits = 4),
-             #               '\nOnly target 1/4: ',
-             #               round(ano_res_t14$`Pr(>F)`[1],digits = 4),
-             #               sep=''))+
              title = paste('LMER P-Value: ',
                            formatC(lme_test[[prob_method]][[norm_meth]][[testing_var]]$test$pvalues[5],format="e",digits = 3),
                            ', Slope: ',
@@ -374,11 +364,6 @@ for (prob_method in c('r_prob','diff_prob')){
                    y=p_vals),
                stat = 'identity')+
       scale_x_discrete(limits = c(1:length(testable_labels)), labels = testable_labels)+
-      # legend.position = c(.15,.8),
-      # legend.background = element_blank(),
-      # legend.title = element_text(size=10),
-      # legend.text = element_text(size=7),
-      # legend.key.size = unit(0.3, "cm"))+#,axis.line = element_line(color='black',size = 1,linetype='solid'))+
       labs(x = 'Tested Variable',
            y = 'LMER P-Value')+
       theme(axis.text.x = element_text(angle = 30, hjust = 1))+
@@ -394,11 +379,6 @@ for (prob_method in c('r_prob','diff_prob')){
                    y=p_vals),
                stat = 'identity')+
       scale_x_discrete(limits = c(1:length(testable_labels)), labels = testable_labels)+
-      # legend.position = c(.15,.8),
-      # legend.background = element_blank(),
-      # legend.title = element_text(size=10),
-      # legend.text = element_text(size=7),
-      # legend.key.size = unit(0.3, "cm"))+#,axis.line = element_line(color='black',size = 1,linetype='solid'))+
       labs(x = 'Tested Variable',
            y = 'LMER P-Value, Only Target 1 and 4')+
       theme(axis.text.x = element_text(angle = 30, hjust = 1))+
@@ -407,12 +387,7 @@ for (prob_method in c('r_prob','diff_prob')){
     pval_plot_grid <- plot_grid(pval_plot,pval_plot_t14,
                                 nrow=2,
                                 align = 'vh')
-
-    # ggsave(paste('pval_plot_',prob_method,'_4t_180trial_4block.pdf',sep = ''),
-    #        plot = pval_plot_grid,
-    #        width=6,
-    #        height=8,
-    #        useDingbats = FALSE)
+    
     ggsave(paste('pval_plot_',prob_method,'_',norm_meth,'.pdf',sep = ''),
            plot = pval_plot_grid,
            width=6,
@@ -509,6 +484,7 @@ for (prob_method in c('diff_prob')){
                            sep=''))+
         theme(legend.position = 'none')
       # facet_grid(cols = vars(subj))
+      
       # Bar plots for diff probability
       if (norm_meth == 'diff'){
         a = aggregate(testing_var ~ probability_metric, filter(testing_data,r_prob != 0), mean)
