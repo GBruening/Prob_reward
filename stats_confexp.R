@@ -1,6 +1,3 @@
-# cd('F:\Google Drive\Yan Experiment')
-# setwd('F:\Google Drive\Yan Experiment')
-
 # Does 33% change anything
 # is the effect the same as erik's?
 # Test between 0, 33, and 66
@@ -9,7 +6,6 @@
 # Probability matching, bimodal distributions?
 
 # Add beta distrubtion update
-
 
 library(ggplot2)
 library(ggthemes)
@@ -28,10 +24,10 @@ library(latex2exp)
 library('R.matlab')
 library(boot)
 library(viridis)
-#====================== Load Fonts
+
+#====================== Load Fonts ================
 # font_import()
 loadfonts(device='win')
-
 
 theme_set(theme_classic(base_family = "Times")+
             theme(text = element_text(color='black'),
@@ -41,14 +37,15 @@ theme_set(theme_classic(base_family = "Times")+
                   axis.line = element_line(color='black',linetype='solid'),
                   plot.title = element_text(hjust = 0.5)))
 
-
-# setwd('d:/Users/Gary/Google Drive/Yan Experiment')
-setwd('F:/Google Drive/Yan Experiment')
+# Set these lines to the base directory of the experiment.
+setwd('d:/Users/Gary/Google Drive/Yan Experiment')
+# setwd('F:/Google Drive/Yan Experiment')
 
 exp_name = '4t_180trial_4block'
 setwd(exp_name)
 test = read.csv(paste('vigor_conf_',exp_name,'.csv',sep=''))
 
+#====================== Filter and add Probs ================
 test = filter(test,trial>16,error_dist < .05)
 test$subj = test$subj+1
 
@@ -92,6 +89,7 @@ for (k in 1:length(test$trial)){
 test$probs = probs
 test$block = blocks
 
+#====================== Create Data Frame ================
 testable_vars_abs = c('peak_vel',
                   'peak_vel_moveback',
                   'move_dur',
@@ -177,7 +175,7 @@ aov_p_vals_t14 = c()
 lme_p_vals = c()
 lme_p_vals_t14 = c()
 
-
+#====================== Loopin ================
 setwd(paste('Graphs/',sep = ''))
 for (prob_method in c('r_prob','diff_prob')){
   setwd(paste(prob_method,sep = ''))
@@ -194,6 +192,7 @@ for (prob_method in c('r_prob','diff_prob')){
     lme_p_vals_t14 = c()
 
     for (testing_var in testable_vars){
+      #====================== Stat Tests ================
       var_select = var_select + 1
       testing_data = filt_data[,c('subj','trial','trial_in_block','target','target_num','block','rewarded','t_since_reward','r_prob',prob_method,testing_var)]
       colnames(testing_data) = c('subj','trial','trial_in_block','target','target_num','block','rewarded','t_since_reward','r_prob','probability_metric', 'testing_var')
@@ -220,7 +219,8 @@ for (prob_method in c('r_prob','diff_prob')){
       lme_p_vals = c(lme_p_vals,lme_test[[prob_method]][[norm_meth]][[testing_var]]$test$pvalues[5])
       lme_p_vals_t14 = c(lme_p_vals_t14,lme_test_t14[[prob_method]][[norm_meth]][[testing_var]]$test$pvalues[5])
 
-
+      
+      #====================== Violin Plot ================
       # Violin Plots
       a = aggregate(testing_var ~ probability_metric ,testing_data,mean)
       b = aggregate(testing_var ~ probability_metric ,testing_data,sd)#/sqrt(length(testing_data[,1]))
@@ -264,6 +264,7 @@ for (prob_method in c('r_prob','diff_prob')){
         theme(legend.position = 'none')
       # facet_grid(cols = vars(subj))
       
+      #====================== NV Plot ================
       # Non-Violin Plot
       a1 = aggregate(testing_var ~ probability_metric + subj,testing_data,mean)
       a = aggregate(testing_var ~ probability_metric ,a1,mean)
@@ -306,8 +307,8 @@ for (prob_method in c('r_prob','diff_prob')){
                            sep=''))+
         theme(legend.position = 'none')
 
-      # Bar plots for diff probability
-
+      # 
+      #====================== Bar plots diff prob ================
       if (norm_meth == 'diff'){
         a = aggregate(testing_var ~ probability_metric, filter(testing_data,r_prob != 0), mean)
         b = aggregate(testing_var ~ probability_metric, filter(testing_data,r_prob != 0), sd)#/sqrt(length(filter(testing_data,r_prob != 0)))
@@ -337,7 +338,8 @@ for (prob_method in c('r_prob','diff_prob')){
                              sep=''))+
           theme(legend.position = 'none')
       }
-
+      
+      #====================== Save the Violin/Non Violin Plots ================
       # plot_name = paste(testable_vars[var_select],'_4t_180trial_4block',sep='')
       plot_name = testable_vars[var_select]
       eval(parse(text = paste(plot_name,'<-g',sep='')))
@@ -360,6 +362,8 @@ for (prob_method in c('r_prob','diff_prob')){
       colnames(c) = c('probability_metric','testing_var','testing_var_sd')
 
     }
+    
+    #====================== Pval Bar Plots ================
     p_vals = data.frame('var' = testable_vars, 'var_num' = c(1:length(testable_vars)), 'p_vals' = lme_p_vals)
     pval_plot <- ggplot()+
       geom_hline(yintercept =  0.05,
@@ -418,7 +422,8 @@ for (prob_method in c('r_prob','diff_prob')){
   }
   setwd('..')
 }
-asfdasdfasfd
+
+#====================== Surprise Factor ================
 # Surprise factor thing
 setwd(paste('Graphs/',sep = ''))
 for (prob_method in c('diff_prob')){
