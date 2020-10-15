@@ -29,8 +29,8 @@ theme_set(theme_classic(base_family = "Times")+
                   plot.title = element_text(hjust = 0.5)))
 
 # Set these lines to the base directory of the experiment.
-setwd('d:/Users/Gary/Google Drive/Yan Experiment')
-# setwd('F:/Google Drive/Yan Experiment')
+# setwd('d:/Users/Gary/Google Drive/Yan Experiment')
+setwd('F:/Google Drive/Yan Experiment')
 
 exp_name = '4t_180trial_4block'
 setwd(exp_name)
@@ -38,7 +38,7 @@ test = read.csv(paste('vigor_conf_',exp_name,'.csv',sep=''))
 
 #====================== Filter and add Probs ================
 test = filter(test,trial>16,error_dist < .05)
-test$subj = test$subj+1
+# test$subj = test$subj+1
 
 trials = c()
 counter = 1
@@ -135,7 +135,8 @@ testable_labels_diff = c('Peak Velocity Diff (m/s)',
 
 # CHECK RADIAL VELOCITY?
 
-for (item in c(testable_vars_abs,testable_vars_norm,testable_vars_diff)){
+# for (item in c(testable_vars_abs,testable_vars_norm,testable_vars_diff)){
+for (item in testable_vars_abs){
   test[,paste(item, '_norm',sep='')] = 0
   test[,paste(item, '_diff',sep='')] = 0
   item_norm = paste(item, '_norm',sep='')
@@ -147,6 +148,17 @@ for (item in c(testable_vars_abs,testable_vars_norm,testable_vars_diff)){
     mean_0 = mean(filter(subj_filt, r_prob == 0)[,item])
     test[test$subj == subj_num,item_norm] = test[test$subj == subj_num,item]/mean_0
     test[test$subj == subj_num,item_diff] = test[test$subj == subj_num,item]-mean_0
+    
+    if ( mean(test[test$r_prob==0 & test$subj == subj_num,item_norm]) != 1){
+      mean(test[test$r_prob==0 & test$subj == subj_num,item_norm])
+      print(subj_num)
+      break
+    }
+  }
+  if (mean(test[test$r_prob==0,item_norm]) != 1){
+    mean(test[test$r_prob==0,item_norm])
+    print(item)
+    break
   }
 }
 
