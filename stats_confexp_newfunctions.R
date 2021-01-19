@@ -130,7 +130,7 @@ add_n_back <- function(data,n_back){
 for (nbacks in c(1)){#},3,5,10)){
   non_famil_data <- add_n_back(non_famil_data,nbacks)
 }
-
+non_famil_data$one_back_rate <- non_famil_data$one_back_rate*2
 
 # 'RWD_Run', #
 # 'NRWD_Run', #
@@ -325,3 +325,179 @@ lme_test_t14 <- list()
 
 #====================== Loopin ================
 setwd(paste('Graphs/',sep = ''))
+
+Prob_plotting <- function(data,
+                          prob_method = 'Probability',
+                          norm_meth = 'abs',
+                          plot_var,
+                          var_lab,
+                          plot_type = 'nv',
+                          Prior_RWD = 'Prior_RWD'){
+
+  
+  if (Prior_RWD == 'Prior_RWD'){
+    
+    plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',prob_method,plot_var)]
+    colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability','probability_metric', 'plot_var')
+    
+    lme_test = list()
+    lme_test <- cftest(lmer(plot_var ~ factor(Target) + probability_metric + (1|Subject), data = plotting_data))
+    lme_test_t14 = list()
+    lme_test_t14 <- cftest(lmer(plot_var ~ factor(Target) + probability_metric + (1|Subject), 
+                                data = rbind(filter(plotting_data,probability_metric==1),
+                                             filter(plotting_data,probability_metric==0))))
+    
+    #============= No Facet Abs
+    a1 = aggregate(plot_var ~ probability_metric + Prior_RWD + Subject ,plotting_data,mean)
+    a  = aggregate(plot_var ~ probability_metric + Prior_RWD ,a1,mean)
+    b  = aggregate(plot_var ~ probability_metric + Prior_RWD ,a1,sd)/sqrt(max(a1$Subject))#/sqrt(length(plotting_data[,1]))
+    c  = cbind(a,b$plot_var)
+    colnames(c) = c('probability_metric','Prior_RWD','plot_var','plot_var_se')
+    
+    g<-ggplot(data = c,
+              aes(x = factor(probability_metric),
+                  y = plot_var,
+                  color = factor(Prior_RWD),
+                  group = factor(Prior_RWD)))+
+      geom_point(data = c,
+                 aes(x = factor(probability_metric),
+                     y = plot_var,
+                     color = factor(Prior_RWD),
+                     group = factor(Prior_RWD)),
+                 size = 5,
+                 position = position_dodge(width = .5))+
+      geom_line(data=c,
+                aes(x = factor(probability_metric),
+                    y = plot_var,
+                    color = factor(Prior_RWD),
+                    group = factor(Prior_RWD)),
+                size = 1,
+                position = position_dodge(width = .5))+
+      geom_errorbar(data=c,
+                    aes(x = factor(probability_metric),
+                        ymin = plot_var-plot_var_se,
+                        ymax = plot_var+plot_var_se,
+                        color = factor(Prior_RWD)),
+                    size = 1,
+                    width = 2,
+                    position = position_dodge(width = .5))+
+      geom_hline(yintercept = mean(filter(plotting_data,probability_metric == 0)$plot_var),linetype='dashed',size=.5)+
+      labs(x = 'Probability of Reward',
+           y = var_lab,
+           title = paste('LMER P-Value: ',
+                         formatC(lme_test$test$pvalues[5],format="e",digits = 3),
+                         ', Slope: ',
+                         formatC(lme_test$test$coefficients[5],format="e",digits = 3),
+                         '\nOnly target 1/4: ',
+                         round(lme_test_t14$test$pvalues[5],digits = 4),
+                         sep=''),
+           color = 'Prior Reward')#+theme(legend.position = 'none')
+  } else {
+    plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability',prob_method,plot_var)]
+    colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability','probability_metric', 'plot_var')
+    
+    ano_res2 = anova(lm(plot_var ~ Target + probability_metric + Target*probability_metric + (1|Subject), data = plotting_data))
+    
+    lme_test = cftest(lmer(plot_var ~ probability_metric + (1|Subject:Target), data = plotting_data))
+    lme_test_t14 = cftest(lmer(plot_var ~ probability_metric + (1|Subject:Target),
+                                data = rbind(filter(plotting_data,Probability==1),
+                                             filter(plotting_data,Probability==0))))
+    
+    plotting_data2 = aggregate(plot_var ~ Subject + Target + Probability,plotting_data,mean)
+    ano_res = anova(lm(plot_var ~ Probability + (1|Subject),
+                                                                  data = plotting_data2))
+    ano_res_t14 = anova(lm(plot_var ~ Probability + (1|Subject),
+                            data = rbind(filter(plotting_data2,Probability==1),
+                                         filter(plotting_data2,Probability==0))))
+    
+    aov_p_vals = c(aov_p_vals,ano_res$`Pr(>F)`[1])
+    aov_p_vals_t14 = c(aov_p_vals,ano_res_t14$`Pr(>F)`[1])
+    lme_p_vals = c(lme_p_vals,lme_test$test$pvalues[2])
+    lme_p_vals_t14 = c(lme_p_vals_t14,lme_test_t14$test$pvalues[2])
+    
+    if (plot_type == 'violin'){
+      #====================== Violin Plot ================
+      # Violin Plots
+      a = aggregate(plot_var ~ probability_metric ,plotting_data,mean)
+      b = aggregate(plot_var ~ probability_metric ,plotting_data,sd)#/sqrt(length(plotting_data[,1]))
+      c = cbind(a,b$plot_var)
+      colnames(c) = c('probability_metric','plot_var','plot_var_sd')
+      
+      g <- ggplot(data=plotting_data,
+                  aes(x = factor(probability_metric),
+                      y = plot_var))+
+        geom_violin(aes(fill = factor(probability_metric)))+
+        geom_point(data=aggregate(plot_var~probability_metric,plotting_data,mean),
+                   aes(x = factor(probability_metric),
+                       y = plot_var),
+                   size = 5)+
+        geom_line(data=aggregate(plot_var~probability_metric,plotting_data,mean),
+                  aes(x = factor(probability_metric),
+                      y = plot_var),
+                  group = 1,
+                  size = 1)+
+        geom_errorbar(data=c,
+                      aes(x = factor(probability_metric),
+                          ymin = plot_var-plot_var_sd,
+                          ymax = plot_var+plot_var_sd),
+                      size = 1,
+                      width = 0)+
+        geom_hline(yintercept = mean(filter(plotting_data,probability_metric == 0)$plot_var),linetype='dashed',size=.5)+
+        labs(x = 'Probability of Reward',
+             y = var_lab,
+             title = paste('LMER P-Value: ',
+                           formatC(lme_test$test$pvalues[2],format="e",digits = 3),
+                           ', Slope: ',
+                           formatC(lme_test$test$coefficients[2],format="e",digits = 3),
+                           '\nOnly Target 1/4: ',
+                           round(lme_test_t14$test$pvalues[2],digits = 4),
+                           sep=''))+
+        theme(legend.position = 'none')
+    } else if (plot_type == 'nv') {
+      
+      # Non-Violin Plot
+      a1 = aggregate(plot_var ~ probability_metric + Subject,plotting_data,mean)
+      a  = aggregate(plot_var ~ probability_metric ,a1,mean)
+      b  = aggregate(plot_var ~ probability_metric ,a1,sd)/sqrt(max(a1$Subject))#/sqrt(length(plotting_data[,1]))
+      c  = cbind(a,b$plot_var)
+      colnames(c) = c('probability_metric','plot_var','plot_var_se')
+      
+      g <- ggplot(data=plotting_data,
+                   aes(x = factor(probability_metric),
+                       y = plot_var))+
+        geom_point(data=aggregate(plot_var~probability_metric,plotting_data,mean),
+                   aes(x = factor(probability_metric),
+                       y = plot_var),
+                   size = 5)+
+        geom_line(data=aggregate(plot_var~probability_metric,plotting_data,mean),
+                  aes(x = factor(probability_metric),
+                      y = plot_var),
+                  group = 1,
+                  size = 1)+
+        geom_errorbar(data=c,
+                      aes(x = factor(probability_metric),
+                          ymin = plot_var-plot_var_se,
+                          ymax = plot_var+plot_var_se),
+                      size = 1,
+                      width = 0)+
+        geom_hline(yintercept = mean(filter(plotting_data,probability_metric == 0)$plot_var),linetype='dashed',size=.5)+
+        labs(x = 'Probability of Reward',
+             y = var_lab,
+             title = paste('LMER P-Value: ',
+                           formatC(lme_test$test$pvalues[2],format="e",digits = 3),
+                           ', Slope: ',
+                           formatC(lme_test$test$coefficients[2],format="e",digits = 3),
+                           '\nOnly Target 1/4: ',
+                           round(lme_test_t14$test$pvalues[2],digits = 4),
+                           sep=''))+
+        theme(legend.position = 'none')
+    }
+  }
+  if (prob_method == 'diff_prob'){
+    g <- g+labs(x = 'Probability difference (P(t)-P(t-1))')
+  }
+  return(g)
+}
+
+
+

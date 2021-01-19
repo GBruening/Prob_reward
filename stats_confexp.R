@@ -130,6 +130,7 @@ add_n_back <- function(data,n_back){
 for (nbacks in c(1)){#},3,5,10)){
   non_famil_data <- add_n_back(non_famil_data,nbacks)
 }
+non_famil_data$one_back_rate <- non_famil_data$one_back_rate*2
 
 
 # 'RWD_Run', #
