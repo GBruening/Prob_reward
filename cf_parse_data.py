@@ -94,13 +94,16 @@ for s, subj_data in enumerate(cfdata):
             del subj_data[trial][item]
 
 #%%
-# Save the data
-if save_data:
-    os.chdir('Data')
-    with open(confdata_file_name+'.pickle', 'wb') as f:
-        print('Data saved as: '+confdata_file_name+'.pickle')
-        pickle.dump([cfdata, target_data], f)
-    os.chdir('..')
+# # Save the data
+# if save_data:
+#     os.chdir('Data')
+#     with open(confdata_file_name+'1-10.pickle', 'wb') as f:
+#         print('Data saved as: '+confdata_file_name+'.pickle')
+#         pickle.dump([cfdata[0:9], target_data[0:9]], f)
+#     with open(confdata_file_name+'11-.pickle', 'wb') as f:
+#         print('Data saved as: '+confdata_file_name+'.pickle')
+#         pickle.dump([cfdata[10:len(cfdata)], target_data[10:len(cfdata)]], f)
+#     os.chdir('..')
 
 #%%
 # Put into a dataframe
