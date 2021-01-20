@@ -1,3 +1,15 @@
+---
+title: "Prob_RWD_exp"
+author: "Garrick Bruening"
+output:
+  bookdown::html_document2:
+    toc: true
+  bookdown::pdf_document2: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
 library(ggplot2)
 library(ggthemes)
 library(lmtest)
@@ -299,12 +311,16 @@ add_norm_diff_func <- function(data, item){
   item_diff = paste('Delta',item,sep='')
   
   for (Subject_num in unique(data$Subject)){
-    for (tar in unique(data$Target)){
-      mean_0 = mean(data[data$r_prob==0 & data$Subject == Subject_num & data$Target == tar,item])
-      
-      data[data$Subject == Subject_num & data$Target == tar,item_norm] <- data[data$Subject == Subject_num & data$Target == tar,item]/mean_0
-      data[data$Subject == Subject_num & data$Target == tar,item_diff] <- data[data$Subject == Subject_num & data$Target == tar,item]-mean_0
-    }
+    mean_0 = mean(data[data$r_prob==0 & data$Subject == Subject_num,item])
+    
+    data[data$Subject == Subject_num, item_norm] <- data[data$Subject == Subject_num, item]/mean_0
+    data[data$Subject == Subject_num, item_diff] <- data[data$Subject == Subject_num, item]-mean_0
+    # for (tar in unique(data$Target)){
+    #   mean_0 = mean(data[data$r_prob==0 & data$Subject == Subject_num & data$Target == tar,item])
+    #   
+    #   data[data$Subject == Subject_num & data$Target == tar,item_norm] <- data[data$Subject == Subject_num & data$Target == tar,item]/mean_0
+    #   data[data$Subject == Subject_num & data$Target == tar,item_diff] <- data[data$Subject == Subject_num & data$Target == tar,item]-mean_0
+    # }
   }
   return(data)
 }
@@ -320,9 +336,7 @@ ano_res_t14 <- list()
 lme_test <- list()
 lme_test_t14 <- list()
 
-#====================== Loopin ================
-setwd(paste('Graphs/',sep = ''))
-
+#====================== Plotting Function ================
 Prob_plotting <- function(data,
                           prob_method = 'Probability',
                           # norm_meth = 'abs',
@@ -411,11 +425,6 @@ Prob_plotting <- function(data,
                             data = rbind(filter(plotting_data2,Probability==1),
                                          filter(plotting_data2,Probability==0))))
     
-    aov_p_vals = c(aov_p_vals,ano_res$`Pr(>F)`[1])
-    aov_p_vals_t14 = c(aov_p_vals,ano_res_t14$`Pr(>F)`[1])
-    lme_p_vals = c(lme_p_vals,lme_test$test$pvalues[2])
-    lme_p_vals_t14 = c(lme_p_vals_t14,lme_test_t14$test$pvalues[2])
-    
     if (plot_type == 'violin'){
       #====================== Violin Plot ================
       # Violin Plots
@@ -501,11 +510,52 @@ Prob_plotting <- function(data,
 }
 
 
-test = Prob_plotting(data = filt_data, prob_method = 'DiffPrior_Prob', plot_var = 'PeakV', var_lab = 'Peak vellllll', plot_type = 'violin', Prior_RWD = 'Prior_RWD')
+# table_func <- function(data, variable){
+#   eval(parse(text = paste('data$table_var = data$',variable,sep='')))
+#   tab = matrix(,nrow=4,ncol=7)
+#   for (s in c(1:7)){
+#     m_count = 0
+#     for (mass in c(2.44,4.830,7.13,11.69)){
+#       m_count = m_count + 1
+#       avg = round(mean(filter(data,speed == s, effmass == mass)$table_var),4)
+#       se = round(sd(filter(data,speed == s, effmass == mass)$table_var)/sqrt(length(filter(data,speed == s, effmass == mass)$table_var)),4)
+#       tab[m_count,s] = paste(avg,"±",se,sep=' ')
+#     }
+#   }
+#   colnames(tab) = c('Speed = 1','Speed = 2','Speed = 3','Speed = 4','Speed = 5','Speed = 6','Speed = 7')
+#   rownames(tab) = c('2.73 kg','4.83 kg','7.13 kg','11.69 kg')
+#   return(tab)
+# }
 
+pvalue_table_func <- function(data, plot_var, prob_metric, PriorRWD){
+  
+  if (PriorRWD != 'PriorRWD'){
+    plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability',prob_method,plot_var)]
+    colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability','probability_metric', 'plot_var')
+    
+    lme_test = cftest(lmer(plot_var ~ probability_metric + (1|Subject:Target), data = plotting_data))
+    lme_test_t14 = cftest(lmer(plot_var ~ probability_metric + (1|Subject:Target),
+                                data = rbind(filter(plotting_data,Probability==1),
+                                             filter(plotting_data,Probability==0))))
+    
+    lm_table <- rbind(c(formatC(lme_test$test$pvalues[2],format="e",digits = 3),
+                        paste(formatC(lme_test$test$coefficients[2],format="e",digits = 3),'±',formatC(lme_test$test$sigma[2],format="e",digits = 3))),
+                      c(formatC(lme_test_t14$test$pvalues[2],format="e",digits = 3),
+                        paste(formatC(lme_test_t14$test$coefficients[2],format="e",digits = 3),'±',formatC(lme_test_t14$test$sigma[2],format="e",digits = 3))))
+    rownames(lm_table) <- c('All Target','Target 1/4')
+    colnames(lm_table) <- c('P-Value','')
+  }
+}
 
+```
 
+```{r peakvelocitystart, warning = FALSE, echo = FALSE}
 
+PeakV <- list()
+PeakV[['abs']] <- Prob_plotting(data= filt_data, prob_method = 'Probability', plot_var = 'PeakV', var_lab = 'Peakvel', plot_type = 'nv', Prior_RWD = '0')
+PeakV[['Norm']] <- Prob_plotting(data= filt_data, prob_method = 'Probability', plot_var = 'NormPeakV', var_lab = 'Peakvel', plot_type = 'nv', Prior_RWD = '0')
+PeakV[['Delta']] <- Prob_plotting(data= filt_data, prob_method = 'Probability', plot_var = 'DeltaPeakV', var_lab = 'Peakvel', plot_type = 'nv', Prior_RWD = '0')
 
+plot_grid(PeakV[['abs']],PeakV[['Norm']],PeakV[['Del]], nrow = 1)
 
-
+```
