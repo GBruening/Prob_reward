@@ -343,7 +343,9 @@ Prob_plotting <- function(data,
                           plot_var,
                           var_lab,
                           plot_type = 'nv',
-                          Prior_RWD = 'Prior_RWD'){
+                          Prior_RWD = 'Prior_RWD',
+                          title_lab = 'Null',
+                          titles = 'Null'){
 
   
   if (Prior_RWD == 'Prior_RWD'){
@@ -395,18 +397,18 @@ Prob_plotting <- function(data,
       # geom_hline(yintercept = mean(filter(plotting_data,probability_metric == 0)$plot_var),linetype='dashed',size=.5)+
       labs(x = 'Probability of Reward',
            y = var_lab,
-           title = paste('LMER P-Values. Prob Metric: ',
+           title = paste('LMER P-Values.\nProb Metric: ',
                          formatC(lme_test$test$pvalues[2],format="e",digits = 3),
                          ',\nPrior Rwd: ',
                          formatC(lme_test$test$pvalues[3],format="e",digits = 3),
-                         ', Interaction: ',
+                         ',\nInteraction: ',
                          formatC(lme_test$test$pvalues[4],format="e",digits = 3),
                          # , Slope: ',
                          # formatC(lme_test$test$coefficients[2],format="e",digits = 3),
                          # '\nOnly target 1/4: ',
                          # round(lme_test_t14$test$pvalues[2],digits = 4),
                          sep=''),
-           color = 'Prior Reward')#+theme(legend.position = 'none')
+           color = 'Prior\nReward')#+theme(legend.position = 'none')
   } else {
     plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability',prob_method,plot_var)]
     colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability','probability_metric', 'plot_var')
@@ -454,15 +456,17 @@ Prob_plotting <- function(data,
                       width = 0)+
         geom_hline(yintercept = mean(filter(plotting_data,probability_metric == 0)$plot_var),linetype='dashed',size=.5)+
         labs(x = 'Probability of Reward',
-             y = var_lab,
-             title = paste('LMER P-Value: ',
+             y = var_lab)+
+        theme(legend.position = 'none')
+      if (titles == 'TRUE'){
+        g <- g+ labs(title = paste('LMER P-Value: ',
                            formatC(lme_test$test$pvalues[2],format="e",digits = 3),
                            ', Slope: ',
                            formatC(lme_test$test$coefficients[2],format="e",digits = 3),
                            '\nOnly Target 1/4: ',
                            round(lme_test_t14$test$pvalues[2],digits = 4),
-                           sep=''))+
-        theme(legend.position = 'none')
+                           sep=''))
+      }
     } else if (plot_type == 'nv') {
       
       # Non-Violin Plot
@@ -492,15 +496,20 @@ Prob_plotting <- function(data,
                       width = 0)+
         geom_hline(yintercept = mean(filter(plotting_data,probability_metric == 0)$plot_var),linetype='dashed',size=.5)+
         labs(x = 'Probability of Reward',
-             y = var_lab,
-             title = paste('LMER P-Value: ',
+             y = var_lab)+
+        theme(legend.position = 'none')
+      if (titles == 'TRUE'){
+        g <- g+ labs(title = paste('LMER P-Value: ',
                            formatC(lme_test$test$pvalues[2],format="e",digits = 3),
                            ', Slope: ',
                            formatC(lme_test$test$coefficients[2],format="e",digits = 3),
                            '\nOnly Target 1/4: ',
                            round(lme_test_t14$test$pvalues[2],digits = 4),
-                           sep=''))+
-        theme(legend.position = 'none')
+                           sep=''))
+      }
+      if (title_lab != 'Null'){
+        g <- g+labs(title = title_lab)
+      }
     }
   }
   if (prob_method == 'diff_prob'){
@@ -527,10 +536,10 @@ Prob_plotting <- function(data,
 #   return(tab)
 # }
 
-pvalue_table_func <- function(data, plot_var, prob_metric, PriorRWD){
+pvalue_table_func <- function(data, plot_var, prob_metric, Prior_RWD, targets = 'all'){
   
-  if (PriorRWD != 'PriorRWD'){
-    plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability',prob_method,plot_var)]
+  if (Prior_RWD != 'Prior_RWD'){
+    plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability',prob_metric,plot_var)]
     colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability','probability_metric', 'plot_var')
     
     lme_test = cftest(lmer(plot_var ~ probability_metric + (1|Subject:Target), data = plotting_data))
@@ -539,23 +548,156 @@ pvalue_table_func <- function(data, plot_var, prob_metric, PriorRWD){
                                              filter(plotting_data,Probability==0))))
     
     lm_table <- rbind(c(formatC(lme_test$test$pvalues[2],format="e",digits = 3),
-                        paste(formatC(lme_test$test$coefficients[2],format="e",digits = 3),'±',formatC(lme_test$test$sigma[2],format="e",digits = 3))),
+                        paste(formatC(lme_test$test$coefficients[2],format="e",digits = 3),'±',formatC(lme_test$test$sigma[2],format="e",digits = 3)),
+                        paste(formatC(lme_test$test$coefficients[1],format="e",digits = 3))),
                       c(formatC(lme_test_t14$test$pvalues[2],format="e",digits = 3),
-                        paste(formatC(lme_test_t14$test$coefficients[2],format="e",digits = 3),'±',formatC(lme_test_t14$test$sigma[2],format="e",digits = 3))))
+                        paste(formatC(lme_test_t14$test$coefficients[2],format="e",digits = 3),'±',formatC(lme_test_t14$test$sigma[2],format="e",digits = 3)),
+                        paste(formatC(lme_test_t14$test$coefficients[1],format="e",digits = 3))))
     rownames(lm_table) <- c('All Target','Target 1/4')
-    colnames(lm_table) <- c('P-Value','')
+    colnames(lm_table) <- c('P-Value','Slope','Intercept')
+    return(lm_table)
+  } else {
+    
+    plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',prob_metric,plot_var)]
+    colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability','probability_metric', 'plot_var')
+    
+    lme_test <- cftest(lmer(plot_var ~ probability_metric*Prior_RWD + (1|Subject:Target), data = plotting_data))
+    lme_test_t14 <- cftest(lmer(plot_var ~ probability_metric*Prior_RWD + (1|Subject:Target), 
+                                data = rbind(filter(plotting_data,probability_metric==1),
+                                             filter(plotting_data,probability_metric==0))))
+    
+    lm_table <- rbind(c(formatC(lme_test$test$pvalues[1],format="e",digits = 3),
+                        paste(formatC(lme_test$test$coefficients[1],format="e",digits = 3),'±',formatC(lme_test$test$sigma[1],format="e",digits = 3))),
+                      c(formatC(lme_test$test$pvalues[2],format="e",digits = 3),
+                        paste(formatC(lme_test$test$coefficients[2],format="e",digits = 3),'±',formatC(lme_test$test$sigma[2],format="e",digits = 3))),
+                      c(formatC(lme_test$test$pvalues[3],format="e",digits = 3),
+                        paste(formatC(lme_test$test$coefficients[3],format="e",digits = 3),'±',formatC(lme_test$test$sigma[3],format="e",digits = 3))),
+                      c(formatC(lme_test$test$pvalues[4],format="e",digits = 3),
+                        paste(formatC(lme_test$test$coefficients[4],format="e",digits = 3),'±',formatC(lme_test$test$sigma[4],format="e",digits = 3))))
+    rownames(lm_table) <- c('Intercept','Prob Metric','Prior RWD','Interaction')
+    colnames(lm_table) <- c('P-Value','Slope')
+    
+    lm14_table <- rbind(c(formatC(lme_test_t14$test$pvalues[1],format="e",digits = 3),
+                          paste(formatC(lme_test_t14$test$coefficients[1],format="e",digits = 3),'±',formatC(lme_test_t14$test$sigma[1],format="e",digits = 3))),
+                        c(formatC(lme_test_t14$test$pvalues[2],format="e",digits = 3),
+                          paste(formatC(lme_test_t14$test$coefficients[2],format="e",digits = 3),'±',formatC(lme_test_t14$test$sigma[2],format="e",digits = 3))),
+                        c(formatC(lme_test_t14$test$pvalues[3],format="e",digits = 3),
+                          paste(formatC(lme_test_t14$test$coefficients[3],format="e",digits = 3),'±',formatC(lme_test_t14$test$sigma[3],format="e",digits = 3))),
+                        c(formatC(lme_test_t14$test$pvalues[4],format="e",digits = 3),
+                          paste(formatC(lme_test_t14$test$coefficients[4],format="e",digits = 3),'±',formatC(lme_test_t14$test$sigma[4],format="e",digits = 3))))
+    rownames(lm14_table) <- c('Intercept','Prob Metric','Prior RWD','Interaction')
+    colnames(lm14_table) <- c('P-Value','Slope')
+    if (targets == 'all'){
+      return(lm_table)
+    } else {
+      return(lm14_table)
+    }
   }
 }
 
 ```
 
-```{r peakvelocitystart, warning = FALSE, echo = FALSE}
+
+## Peak Velocity
+
+### No Prior RWD
+```{r peakvelocitytables, warning = FALSE, echo = FALSE}
+kable(pvalue_table_func(filt_data,
+                        plot_var = 'PeakV',
+                        prob_metric = 'Probability', 
+                        Prior_RWD = 'no'),
+      caption = 'Peak Velocity P-Values for effect of Probability')
+kable(pvalue_table_func(filt_data,
+                        plot_var = 'NormPeakV', 
+                        prob_metric = 'Probability', 
+                        Prior_RWD = 'no'), 
+      caption = 'Peak Velocity Norm P-Values for effect of Probability')
+kable(pvalue_table_func(filt_data,
+                        plot_var = 'DeltaPeakV', 
+                        prob_metric = 'Probability', 
+                        Prior_RWD = 'no'), 
+      caption = 'Peak Velocity Delta P-Values for effect of Probability')
+```
+
+```{r peakvelocityplot, warning = FALSE, echo = FALSE, fig.width = 12, fig.height = 6}
 
 PeakV <- list()
-PeakV[['abs']] <- Prob_plotting(data= filt_data, prob_method = 'Probability', plot_var = 'PeakV', var_lab = 'Peakvel', plot_type = 'nv', Prior_RWD = '0')
-PeakV[['Norm']] <- Prob_plotting(data= filt_data, prob_method = 'Probability', plot_var = 'NormPeakV', var_lab = 'Peakvel', plot_type = 'nv', Prior_RWD = '0')
-PeakV[['Delta']] <- Prob_plotting(data= filt_data, prob_method = 'Probability', plot_var = 'DeltaPeakV', var_lab = 'Peakvel', plot_type = 'nv', Prior_RWD = '0')
+PeakV[['abs']] <- Prob_plotting(data= filt_data, 
+                                prob_method = 'Probability', 
+                                plot_var = 'PeakV', 
+                                var_lab = 'Peak Velocity (m/s)', 
+                                plot_type = 'nv',
+                                title_lab = 'ABS',
+                                Prior_RWD = '0')
+PeakV[['Norm']] <- Prob_plotting(data= filt_data,
+                                 prob_method = 'Probability',
+                                 plot_var = 'NormPeakV', 
+                                 var_lab = 'Peak Velocity NORM (m/s)', 
+                                 plot_type = 'nv',
+                                 title_lab = 'NORM',
+                                 Prior_RWD = '0')
+PeakV[['Delta']] <- Prob_plotting(data= filt_data, 
+                                  prob_method = 'Probability', 
+                                  plot_var = 'DeltaPeakV', 
+                                  var_lab = 'Peak Velocity DELTA (m/s)', 
+                                  plot_type = 'nv', 
+                                  title_lab = 'DELTA',
+                                  Prior_RWD = '0')
 
-plot_grid(PeakV[['abs']],PeakV[['Norm']],PeakV[['Del]], nrow = 1)
+plot_grid(PeakV[['abs']],PeakV[['Norm']],PeakV[['Delta']], nrow = 1)
+
+```
+
+
+### WITH Prior RWD
+```{r peakvelocitytablesPriorRWD, warning = FALSE, echo = FALSE}
+kable(pvalue_table_func(filt_data,
+                        plot_var = 'PeakV',
+                        prob_metric = 'Probability', 
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Peak Velocity P-Values for effect of Probability')
+kable(pvalue_table_func(filt_data,
+                        plot_var = 'NormPeakV', 
+                        prob_metric = 'Probability', 
+                        Prior_RWD = 'Prior_RWD'), 
+      caption = 'Peak Velocity Norm P-Values for effect of Probability')
+kable(pvalue_table_func(filt_data,
+                        plot_var = 'DeltaPeakV', 
+                        prob_metric = 'Probability', 
+                        Prior_RWD = 'Prior_RWD'), 
+      caption = 'Peak Velocity Delta P-Values for effect of Probability')
+```
+
+```{r peakvelocityplotPriorRWD, warning = FALSE, echo = FALSE, fig.width = 12, fig.height = 6}
+
+PeakV <- list()
+PeakV[['abs']] <- Prob_plotting(data= filt_data, 
+                                prob_method = 'Probability', 
+                                plot_var = 'PeakV', 
+                                var_lab = 'Peak Velocity (m/s)', 
+                                plot_type = 'nv',
+                                title_lab = 'ABS',
+                                Prior_RWD = 'Prior_RWD')
+PeakV[['Norm']] <- Prob_plotting(data= filt_data,
+                                 prob_method = 'Probability',
+                                 plot_var = 'NormPeakV', 
+                                 var_lab = 'Peak Velocity NORM (m/s)', 
+                                 plot_type = 'nv',
+                                 title_lab = 'NORM',
+                                 Prior_RWD = 'Prior_RWD')
+PeakV[['Delta']] <- Prob_plotting(data= filt_data, 
+                                  prob_method = 'Probability', 
+                                  plot_var = 'DeltaPeakV', 
+                                  var_lab = 'Peak Velocity DELTA (m/s)', 
+                                  plot_type = 'nv', 
+                                  title_lab = 'DELTA',
+                                  Prior_RWD = 'Prior_RWD')
+
+plot_grid(PeakV[['abs']]+theme(legend.position = 'none'),
+          PeakV[['Norm']]+theme(legend.position = 'none'),
+          PeakV[['Delta']]+theme(legend.position = 'none'),
+          get_legend(PeakV[['Delta']]), 
+          nrow = 1,
+          rel_widths = c(5,5,5,1))
 
 ```
