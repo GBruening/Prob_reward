@@ -88,11 +88,11 @@ if len(already_pulled)>0 and n_files>0:
         print('Pulling Vars: '+str(filename))
         out = eng.testing('Data\\'+filename)
         cfdata.append({})
-        cfdata[s] = pull_vars(out, cfdata[s], obj_need)
-        cfdata[s]['trial_1']['filename'] = filename
+        cfdata[s+len(already_pulled)] = pull_vars(out, cfdata[s+len(already_pulled)], obj_need)
+        cfdata[s+len(already_pulled)]['trial_1']['filename'] = filename
         
         target_data.append({})
-        target_data[s].update({'BLOCK_TABLE': out['trial_1']['BLOCK_TABLE'],
+        target_data[s+len(already_pulled)].update({'BLOCK_TABLE': out['trial_1']['BLOCK_TABLE'],
                                'TP_TABLE': out['trial_1']['TP_TABLE'],
                                'TARGET_TABLE': out['trial_1']['TARGET_TABLE']})
 elif n_files == 1:
@@ -162,6 +162,7 @@ if save_data:
         pickle.dump([cfdata, target_data, file_name], f)
     os.chdir('..')
 
+# %%
 # This was an attempt to parralize this to speed it up. Didn't work.
 # import multiprocessing as mp
 # pool = mp.Pool(mp.cpu_count())
