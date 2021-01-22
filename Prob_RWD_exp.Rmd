@@ -608,13 +608,16 @@ filt_data <- non_famil_data
 
 ### No Prior RWD
 ```{r peakvelocitytables, warning = FALSE, echo = FALSE}
+
+var_test = 'PeakV'
+
 kable(pvalue_table_func(filt_data,
-                        plot_var = 'PeakV',
+                        plot_var = var_test,
                         prob_metric = 'Probability', 
                         Prior_RWD = 'no'),
       caption = 'Peak Velocity P-Values for effect of Probability')
 kable(pvalue_table_func(filt_data,
-                        plot_var = 'NormPeakV', 
+                        plot_var = paste('Norm',var_test,sep=''), 
                         prob_metric = 'Probability', 
                         Prior_RWD = 'no'), 
       caption = 'Peak Velocity Norm P-Values for effect of Probability')
