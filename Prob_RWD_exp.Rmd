@@ -603,15 +603,25 @@ pvalue_table_func <- function(data, plot_var, prob_metric, Prior_RWD, targets = 
                                 data = rbind(filter(plotting_data,Probability==1),
                                              filter(plotting_data,Probability==0))))
     
+    anova_test = anova(lm(plot_var ~ probability_metric + (1|Subject), 
+                          data = aggregate(plot_var~probability_metric + Subject, 
+                                           data = rbind(filter(plotting_data, Probability==1),
+                                                        filter(plotting_data, Probability==0)),
+                                           mean)))
+    
     lm_table <- rbind(c(formatC(lme_test$test$pvalues[2],format="e",digits = 3),
                         paste(formatC(lme_test$test$coefficients[2],format="e",digits = 3),'±',formatC(lme_test$test$sigma[2],format="e",digits = 3)),
-                        paste(formatC(lme_test$test$coefficients[1],format="e",digits = 3))),
+                        formatC(lme_test$test$coefficients[1],format="e",digits = 3)),
                       c(formatC(lme_test_t14$test$pvalues[2],format="e",digits = 3),
                         paste(formatC(lme_test_t14$test$coefficients[2],format="e",digits = 3),'±',formatC(lme_test_t14$test$sigma[2],format="e",digits = 3)),
-                        paste(formatC(lme_test_t14$test$coefficients[1],format="e",digits = 3))))
-    rownames(lm_table) <- c('All Target','Target 1/4')
+                        formatC(lme_test_t14$test$coefficients[1],format="e",digits = 3)),
+                      c(formatC(anova_test$`Pr(>F)`[1],format='e',digits = 3),
+                        paste('F val: ',formatC(anova_test$`F value`[1],format='e',digits = 3),sep=''),
+                        ''))
+    rownames(lm_table) <- c('All Target LMER','Target 1/4 LMER','Target 1/4 ANOVA')
     colnames(lm_table) <- c('P-Value','Slope','Intercept')
     return(lm_table)
+    
   } else {
     
     plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',prob_metric,plot_var)]
@@ -621,6 +631,12 @@ pvalue_table_func <- function(data, plot_var, prob_metric, Prior_RWD, targets = 
     lme_test_t14 <- cftest(lmer(plot_var ~ probability_metric*Prior_RWD + (1|Subject:Target), 
                                 data = rbind(filter(plotting_data,probability_metric==1),
                                              filter(plotting_data,probability_metric==0))))
+    
+    anova_test = anova(lm(plot_var ~ probability_metric + (1|Subject), 
+                          data = aggregate(plot_var~probability_metric + Subject, 
+                                           data = rbind(filter(plotting_data, Probability==1),
+                                                        filter(plotting_data, Probability==0)),
+                                           mean)))
     
     lm_table <- rbind(c(formatC(lme_test$test$pvalues[1],format="e",digits = 3),
                         paste(formatC(lme_test$test$coefficients[1],format="e",digits = 3),'±',formatC(lme_test$test$sigma[1],format="e",digits = 3))),
