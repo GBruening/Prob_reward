@@ -501,7 +501,6 @@ Prob_plotting <- function(data,
 }
 
 
-test = Prob_plotting(data = filt_data, prob_method = 'DiffPrior_Prob', plot_var = 'PeakV', var_lab = 'Peak vellllll', plot_type = 'violin', Prior_RWD = 'Prior_RWD')
 
 
 
