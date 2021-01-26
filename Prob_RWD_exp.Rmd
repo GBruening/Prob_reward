@@ -611,6 +611,57 @@ Prob_plotting <- function(data,
   return(ret_list)
 }
 
+trial_plotting <- function(data,
+                           plot_var,
+                           var_lab,
+                           variable,
+                           title_lab = 'Null',
+                           titles = 'Null'){
+  
+  
+  plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',plot_var)]
+  colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability', 'plot_var')
+  
+  lm = cftest(lmer(plot_var ~ Trial + (1|Subject),data = plotting_data))
+  
+  trial_p_val <- lm$test$pvalues[2]
+  trial_slope <- lm$coef[2]
+  if (trial_p_val<0.05){
+    yesno = 'WAS'
+    if (trial_slope<0.05){
+      slope = ' INCREASED'
+    } else {
+      slope = ' DECREASED'
+    }
+  } else {
+    yesno = 'WAS NOT'
+    slope = 'DID NOT CHANGE'
+  }
+  trial_slope = formatC(trial_slope, digits = 3, format='e')
+  trial_p_val = formatC(trial_p_val, digits = 3, format='e')
+  trial_str = paste('Over the course of the experiment, ',variable,slope,' with each subsequent trial. This was tested using an LMER of the form: ',variable,' = B*Trial + (1|Subject). We found B = ',trial_slope,' and a p-value = ',trial_p_val,', and an intercept of ',formatC(lm$coef[1], digits = 3, format='e'),sep='')
+  
+  g <- ggplot()+
+    geom_point(data = plotting_data,
+               aes(x = Trial,
+                   y = plot_var,
+                   color = factor(Subject)),
+               alpha = 0.2,
+               shape = 16)+
+    geom_smooth(data = plotting_data,
+               aes(x = Trial,
+                   y = plot_var,
+                   color = factor(Subject)))+
+    labs(x = 'Trial',
+         y = var_lab,
+         color = 'Subject')
+  
+  
+  
+  ret_list = list('plot' = g, 'lm' = lm, 'trial_str' = trial_str)
+  
+}
+
 
 # table_func <- function(data, variable){
 #   eval(parse(text = paste('data$table_var = data$',variable,sep='')))
@@ -914,7 +965,6 @@ priordiff_ttest_str_gen <- function(ttest, ttest1, ttest0, variable){
   return(str)
 }
 
-
 priordiffprob_str_gen <- function(lm_prob_prior, lm_prior1, lm_prior0, variable, prob_metric){
   
   lm_pval_prob = lm_prob_prior$test$pvalues[2]
@@ -1046,6 +1096,20 @@ plots[[chunk_var]][['Delta']][['plot']]
 `r t14_str_gen(cur_plot$t_test$p.value,cur_plot$ano14[['Pr(>F)']][1],chunk_var_lab)`
 
 ## Effect of Trial
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Trial']] = trial_plotting(filt_data,'PeakV','peakpoop','peak velocity')
+
+```
+
+`r plots[[chunk_var]][['Trial']][['trial_str']]`
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[chunk_var]][['Trial']][['plot']]
+
+```
 
 ## Peak Velocity Following Reward
 
