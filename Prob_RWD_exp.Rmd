@@ -913,6 +913,96 @@ priordiff_ttest_str_gen <- function(ttest, ttest1, ttest0, variable){
   
   return(str)
 }
+
+
+priordiffprob_str_gen <- function(lm_prob_prior, lm_prior1, lm_prior0, variable, prob_metric){
+  
+  lm_pval_prob = lm_prob_prior$test$pvalues[2]
+  lm_pval_prior = lm_prob_prior$test$pvalues[3]
+  lm_pval_int = lm_prob_prior$test$pvalues[4]
+  
+  lm_slope_prob = lm_prob_prior$coef[2]
+  lm_slope_prior = lm_prob_prior$coef[3]
+  lm_slope_int = lm_prob_prior$coef[4]
+  
+  if (lm_pval_prob<0.05){
+    yesno_prob = 'WAS'
+  } else {
+    yesno_prob = 'WAS NOT'
+  }
+  if (lm_slope_prob > 0){
+    slope_prob = 'INCREASE'
+  } else {
+    slope_prob = 'DECREASE'
+  }
+  
+  
+  if (lm_pval_prior<0.05){
+    yesno_prior = 'DID'
+  } else {
+    yesno_prior = 'DID NOT'
+  }
+  if (lm_slope_prior > 0){
+    slope_prior = 'INCREASE'
+  } else {
+    slope_prior = 'DECREASE'
+  }
+  
+  
+  if (lm_pval_int<0.05){
+    yesno_int = 'WAS'
+  } else {
+    yesno_int = 'WAS NOT'
+  }
+  if (lm_slope_int > 0){
+    slope_int = 'INCREASE'
+  } else {
+    slope_int = 'DECREASE'
+  }
+  
+  lm_pval_prob = formatC(lm_pval_prob,format='e',digits =3)
+  lm_pval_prior = formatC(lm_pval_prior,format='e',digits =3)
+  lm_pval_int = formatC(lm_pval_int,format='e',digits =3)
+  
+  str_lm = paste('We then investigate the effect of the difference in probability from the previous trial to the current trial on ',variable,'. First we find that prior reward ',yesno_prior,' have an effect on ',variable,' change from previous trial (p = ',lm_pval_prior,'). This indicates that prior reward made subjects ',slope_prior,' their ',variable,'. An interaction between prior reward and probability difference ',yesno_int,' significant. We then split this linear model into two, one with prior reward and one with no prior reward.')
+  
+  lme_pval_prior0 = lm_prior0$test$pvalues[2]
+  lme_pval_prior1 = lm_prior1$test$pvalues[2]
+  
+  lm_slope_prior0 = lm_prior0$coef[2]
+  lm_slope_prior1 = lm_prior1$coef[2]
+  
+  if (lme_pval_prior0<0.05){
+    yesno_prior0 = 'finding a significant slope'
+  } else {
+    yesno_prior0 = 'finding NO significant slope'
+  }
+  if (lm_slope_prior0 > 0){
+    slope_prob = 'INCREASE'
+  } else {
+    slope_prob = 'DECREASE'
+  }
+  
+  if (lme_pval_prior1<0.05){
+    yesno_prior1 = 'finding a significant slope'
+  } else {
+    yesno_prior1 = 'finding NO significant slope'
+  }
+  if (lm_slope_prior1 > 0){
+    slope_prob = 'INCREASE'
+  } else {
+    slope_prob = 'DECREASE'
+  }
+  
+  lme_pval_prior1 = formatC(lme_pval_prior1,format='e',digits =3)
+  lme_pval_prior0 = formatC(lme_pval_prior0,format='e',digits =3)
+  lm_slope_prior1 = formatC(lm_slope_prior1,format='e',digits =3)
+  lm_slope_prior0 = formatC(lm_slope_prior0,format='e',digits =3)
+  
+  str_lm_split = paste('Dividing the data set into two groups (trials following reward and trials not following reward) resulted in ',yesno_prior1,' of probability (p = ',lme_pval_prior1,', slope = ',lm_slope_prior1,') in trials that follow reward, and ',yesno_prior0,' (p = ',lme_pval_prior0,', slope = ',lm_slope_prior0,') in trials that do not follow reward.',sep='')
+  
+  return(paste(str_lm,'\n',str_lm_split,sep='\n'))
+}
 ```
 # Peak Velocity
 ## Effect of Probability
@@ -1058,11 +1148,12 @@ cur_plot <- plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']]
 
 kable(pvalue_table_func(filt_data,
                         plot_var = paste('DiffPrior_',chunk_var,sep=''),
-                        prob_metric = 'Probability',
+                        prob_metric = 'DiffPrior_Probability',
                         Prior_RWD = 'Prior_RWD'),
       caption = paste(chunk_var,' Diff Prior P-Values for effect of Diff Probability',sep=''))
 
 ```
+`r priordiffprob_str_gen(cur_plot$lm, cur_plot$lme_test_Prior1, cur_plot$lme_test_Prior0, chunk_var_lab, 'probability difference')`
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
@@ -1077,150 +1168,150 @@ plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
 
 
 
-## No Prior RWD
-```{r peakvelocitytables, warning = FALSE, echo = FALSE}
+<!-- ## No Prior RWD -->
+<!-- ```{r peakvelocitytables, warning = FALSE, echo = FALSE} -->
 
-chunk_var = 'PeakV'
+<!-- chunk_var = 'PeakV' -->
 
-kable(pvalue_table_func(filt_data,
-                        plot_var = chunk_var,
-                        prob_metric = 'Probability',
-                        Prior_RWD = 'no'),
-      caption = 'Peak Velocity P-Values for effect of Probability')
-```
+<!-- kable(pvalue_table_func(filt_data, -->
+<!--                         plot_var = chunk_var, -->
+<!--                         prob_metric = 'Probability', -->
+<!--                         Prior_RWD = 'no'), -->
+<!--       caption = 'Peak Velocity P-Values for effect of Probability') -->
+<!-- ``` -->
 
-```{r peakvelocityplot, warning = FALSE, echo = FALSE, fig.width = 12, fig.height = 6}
+<!-- ```{r peakvelocityplot, warning = FALSE, echo = FALSE, fig.width = 12, fig.height = 6} -->
 
-PeakV <- list()
-PeakV[['abs']] <- Prob_plotting(data= filt_data,
-                                prob_method = 'Probability',
-                                plot_var = chunk_var,
-                                var_lab = 'Peak Velocity (m/s)',
-                                plot_type = 'nv',
-                                title_lab = 'ABS',
-                                Prior_RWD = '0')
-PeakV[['Norm']] <- Prob_plotting(data= filt_data,
-                                 prob_method = 'Probability',
-                                 plot_var = paste('Norm',chunk_var,sep=''),
-                                 var_lab = 'Peak Velocity NORM (m/s)',
-                                 plot_type = 'nv',
-                                 title_lab = 'NORM',
-                                 Prior_RWD = '0')
-PeakV[['Delta']] <- Prob_plotting(data= filt_data,
-                                  prob_method = 'Probability',
-                                  plot_var = paste('Delta',chunk_var,sep=''),
-                                  var_lab = 'Peak Velocity DELTA (m/s)',
-                                  plot_type = 'nv',
-                                  title_lab = 'DELTA',
-                                  Prior_RWD = '0')
+<!-- PeakV <- list() -->
+<!-- PeakV[['abs']] <- Prob_plotting(data= filt_data, -->
+<!--                                 prob_method = 'Probability', -->
+<!--                                 plot_var = chunk_var, -->
+<!--                                 var_lab = 'Peak Velocity (m/s)', -->
+<!--                                 plot_type = 'nv', -->
+<!--                                 title_lab = 'ABS', -->
+<!--                                 Prior_RWD = '0') -->
+<!-- PeakV[['Norm']] <- Prob_plotting(data= filt_data, -->
+<!--                                  prob_method = 'Probability', -->
+<!--                                  plot_var = paste('Norm',chunk_var,sep=''), -->
+<!--                                  var_lab = 'Peak Velocity NORM (m/s)', -->
+<!--                                  plot_type = 'nv', -->
+<!--                                  title_lab = 'NORM', -->
+<!--                                  Prior_RWD = '0') -->
+<!-- PeakV[['Delta']] <- Prob_plotting(data= filt_data, -->
+<!--                                   prob_method = 'Probability', -->
+<!--                                   plot_var = paste('Delta',chunk_var,sep=''), -->
+<!--                                   var_lab = 'Peak Velocity DELTA (m/s)', -->
+<!--                                   plot_type = 'nv', -->
+<!--                                   title_lab = 'DELTA', -->
+<!--                                   Prior_RWD = '0') -->
 
-plot_grid(PeakV[['abs']],PeakV[['Norm']],PeakV[['Delta']], nrow = 1)
+<!-- plot_grid(PeakV[['abs']],PeakV[['Norm']],PeakV[['Delta']], nrow = 1) -->
 
-```
-
-
-## WITH Prior RWD
-```{r peakvelocitytablesPriorRWD, warning = FALSE, echo = FALSE}
-kable(pvalue_table_func(filt_data,
-                        plot_var = chunk_var,
-                        prob_metric = 'Probability',
-                        Prior_RWD = 'Prior_RWD'),
-      caption = 'Peak Velocity P-Values for effect of Probability')
-```
-
-```{r peakvelocityplotPriorRWD, warning = FALSE, echo = FALSE, fig.width = 12, fig.height = 6}
-
-PeakV <- list()
-PeakV[['abs']] <- Prob_plotting(data= filt_data,
-                                prob_method = 'Probability',
-                                plot_var = chunk_var,
-                                var_lab = 'Peak Velocity (m/s)',
-                                plot_type = 'nv',
-                                title_lab = 'ABS',
-                                Prior_RWD = 'Prior_RWD')
-PeakV[['Norm']] <- Prob_plotting(data= filt_data,
-                                 prob_method = 'Probability',
-                                 plot_var = paste('Norm',chunk_var,sep=''),
-                                 var_lab = 'Peak Velocity NORM (m/s)',
-                                 plot_type = 'nv',
-                                 title_lab = 'NORM',
-                                 Prior_RWD = 'Prior_RWD')
-PeakV[['Delta']] <- Prob_plotting(data= filt_data,
-                                  prob_method = 'Probability',
-                                  plot_var = paste('Delta',chunk_var,sep=''),
-                                  var_lab = 'Peak Velocity DELTA (m/s)',
-                                  plot_type = 'nv',
-                                  title_lab = 'DELTA',
-                                  Prior_RWD = 'Prior_RWD')
-
-plot_grid(PeakV[['abs']]+theme(legend.position = 'none'),
-          PeakV[['Norm']]+theme(legend.position = 'none'),
-          PeakV[['Delta']]+theme(legend.position = 'none'),
-          get_legend(PeakV[['Delta']]),
-          nrow = 1,
-          rel_widths = c(5,5,5,1))
-
-```
-
-## Difference Probability from prev trial
-```{r peakvelwithpriorprobdiff, warning = FALSE, echo = FALSE, message = FALSE, fig.width = 12, fig.height = 6}
-
-kable(pvalue_table_func(filt_data,
-                        plot_var = chunk_var,
-                        prob_metric = "DiffPrior_Probability",
-                        Prior_RWD = 'Prior_RWD'),
-      caption = 'Peak Velocity P-Values for effect of Probability')
-
-```
+<!-- ``` -->
 
 
-```{r peakvelwithpriorprobdiffPriorRwd, warning = FALSE, echo = FALSE, message = FALSE, fig.width = 12, fig.height = 6}
+<!-- ## WITH Prior RWD -->
+<!-- ```{r peakvelocitytablesPriorRWD, warning = FALSE, echo = FALSE} -->
+<!-- kable(pvalue_table_func(filt_data, -->
+<!--                         plot_var = chunk_var, -->
+<!--                         prob_metric = 'Probability', -->
+<!--                         Prior_RWD = 'Prior_RWD'), -->
+<!--       caption = 'Peak Velocity P-Values for effect of Probability') -->
+<!-- ``` -->
 
-PeakV <- list()
-PeakV[['abs']] <- Prob_plotting(data= filt_data,
-                                prob_method = "DiffPrior_Probability",
-                                plot_var = chunk_var,
-                                var_lab = 'Peak Velocity (m/s)',
-                                plot_type = 'nv',
-                                title_lab = 'ABS',
-                                Prior_RWD = 'Prior_RWD')$plot+labs(x = 'Probability Difference from Previous Trial')
-PeakV[['Norm']] <- Prob_plotting(data= filt_data,
-                                 prob_method = "DiffPrior_Probability",
-                                 plot_var = paste('Norm',chunk_var,sep=''),
-                                 var_lab = 'Peak Velocity NORM (m/s)',
-                                 plot_type = 'nv',
-                                 title_lab = 'NORM',
-                                 Prior_RWD = 'Prior_RWD')$plot+labs(x = 'Probability Difference from Previous Trial')
-PeakV[['Delta']] <- Prob_plotting(data= filt_data,
-                                  prob_method = "DiffPrior_Probability",
-                                  plot_var = paste('Delta',chunk_var,sep=''),
-                                  var_lab = 'Peak Velocity DELTA (m/s)',
-                                  plot_type = 'nv',
-                                  title_lab = 'DELTA',
-                                  Prior_RWD = 'Prior_RWD')$plot+labs(x = 'Probability Difference from Previous Trial')
+<!-- ```{r peakvelocityplotPriorRWD, warning = FALSE, echo = FALSE, fig.width = 12, fig.height = 6} -->
 
-plot_grid(PeakV[['abs']]+theme(legend.position = 'none'),
-          PeakV[['Norm']]+theme(legend.position = 'none'),
-          PeakV[['Delta']]+theme(legend.position = 'none'),
-          get_legend(PeakV[['Delta']]),
-          nrow = 1,
-          rel_widths = c(5,5,5,1))
+<!-- PeakV <- list() -->
+<!-- PeakV[['abs']] <- Prob_plotting(data= filt_data, -->
+<!--                                 prob_method = 'Probability', -->
+<!--                                 plot_var = chunk_var, -->
+<!--                                 var_lab = 'Peak Velocity (m/s)', -->
+<!--                                 plot_type = 'nv', -->
+<!--                                 title_lab = 'ABS', -->
+<!--                                 Prior_RWD = 'Prior_RWD') -->
+<!-- PeakV[['Norm']] <- Prob_plotting(data= filt_data, -->
+<!--                                  prob_method = 'Probability', -->
+<!--                                  plot_var = paste('Norm',chunk_var,sep=''), -->
+<!--                                  var_lab = 'Peak Velocity NORM (m/s)', -->
+<!--                                  plot_type = 'nv', -->
+<!--                                  title_lab = 'NORM', -->
+<!--                                  Prior_RWD = 'Prior_RWD') -->
+<!-- PeakV[['Delta']] <- Prob_plotting(data= filt_data, -->
+<!--                                   prob_method = 'Probability', -->
+<!--                                   plot_var = paste('Delta',chunk_var,sep=''), -->
+<!--                                   var_lab = 'Peak Velocity DELTA (m/s)', -->
+<!--                                   plot_type = 'nv', -->
+<!--                                   title_lab = 'DELTA', -->
+<!--                                   Prior_RWD = 'Prior_RWD') -->
 
-```
+<!-- plot_grid(PeakV[['abs']]+theme(legend.position = 'none'), -->
+<!--           PeakV[['Norm']]+theme(legend.position = 'none'), -->
+<!--           PeakV[['Delta']]+theme(legend.position = 'none'), -->
+<!--           get_legend(PeakV[['Delta']]), -->
+<!--           nrow = 1, -->
+<!--           rel_widths = c(5,5,5,1)) -->
+
+<!-- ``` -->
+
+<!-- ## Difference Probability from prev trial -->
+<!-- ```{r peakvelwithpriorprobdiff, warning = FALSE, echo = FALSE, message = FALSE, fig.width = 12, fig.height = 6} -->
+
+<!-- kable(pvalue_table_func(filt_data, -->
+<!--                         plot_var = chunk_var, -->
+<!--                         prob_metric = "DiffPrior_Probability", -->
+<!--                         Prior_RWD = 'Prior_RWD'), -->
+<!--       caption = 'Peak Velocity P-Values for effect of Probability') -->
+
+<!-- ``` -->
 
 
-## Bar Plot Example
-```{r peakvelwithpriorbar, warning = FALSE, echo = FALSE, message = FALSE, fig.width = 4, fig.height = 4}
+<!-- ```{r peakvelwithpriorprobdiffPriorRwd, warning = FALSE, echo = FALSE, message = FALSE, fig.width = 12, fig.height = 6} -->
 
-Prob_plotting(data= filt_data,
-              prob_method = "Probability",
-              plot_var = chunk_var,
-              var_lab = 'Peak Velocity (m/s)',
-              plot_type = 'bar',
-              title_lab = 'ABS',
-              Prior_RWD = 'Prior_RWD')$plot
+<!-- PeakV <- list() -->
+<!-- PeakV[['abs']] <- Prob_plotting(data= filt_data, -->
+<!--                                 prob_method = "DiffPrior_Probability", -->
+<!--                                 plot_var = chunk_var, -->
+<!--                                 var_lab = 'Peak Velocity (m/s)', -->
+<!--                                 plot_type = 'nv', -->
+<!--                                 title_lab = 'ABS', -->
+<!--                                 Prior_RWD = 'Prior_RWD')$plot+labs(x = 'Probability Difference from Previous Trial') -->
+<!-- PeakV[['Norm']] <- Prob_plotting(data= filt_data, -->
+<!--                                  prob_method = "DiffPrior_Probability", -->
+<!--                                  plot_var = paste('Norm',chunk_var,sep=''), -->
+<!--                                  var_lab = 'Peak Velocity NORM (m/s)', -->
+<!--                                  plot_type = 'nv', -->
+<!--                                  title_lab = 'NORM', -->
+<!--                                  Prior_RWD = 'Prior_RWD')$plot+labs(x = 'Probability Difference from Previous Trial') -->
+<!-- PeakV[['Delta']] <- Prob_plotting(data= filt_data, -->
+<!--                                   prob_method = "DiffPrior_Probability", -->
+<!--                                   plot_var = paste('Delta',chunk_var,sep=''), -->
+<!--                                   var_lab = 'Peak Velocity DELTA (m/s)', -->
+<!--                                   plot_type = 'nv', -->
+<!--                                   title_lab = 'DELTA', -->
+<!--                                   Prior_RWD = 'Prior_RWD')$plot+labs(x = 'Probability Difference from Previous Trial') -->
 
-```
+<!-- plot_grid(PeakV[['abs']]+theme(legend.position = 'none'), -->
+<!--           PeakV[['Norm']]+theme(legend.position = 'none'), -->
+<!--           PeakV[['Delta']]+theme(legend.position = 'none'), -->
+<!--           get_legend(PeakV[['Delta']]), -->
+<!--           nrow = 1, -->
+<!--           rel_widths = c(5,5,5,1)) -->
+
+<!-- ``` -->
+
+
+<!-- ## Bar Plot Example -->
+<!-- ```{r peakvelwithpriorbar, warning = FALSE, echo = FALSE, message = FALSE, fig.width = 4, fig.height = 4} -->
+
+<!-- Prob_plotting(data= filt_data, -->
+<!--               prob_method = "Probability", -->
+<!--               plot_var = chunk_var, -->
+<!--               var_lab = 'Peak Velocity (m/s)', -->
+<!--               plot_type = 'bar', -->
+<!--               title_lab = 'ABS', -->
+<!--               Prior_RWD = 'Prior_RWD')$plot -->
+
+<!-- ``` -->
 
 <!-- ## Peak Velocity Difference from previous trial -->
 
