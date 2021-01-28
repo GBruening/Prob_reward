@@ -1099,7 +1099,7 @@ plots[[chunk_var]][['Delta']][['plot']]
 
 ```{r, echo = FALSE, warning = FALSE}
 
-plots[[chunk_var]][['Trial']] = trial_plotting(filt_data,'PeakV','peakpoop','peak velocity')
+plots[[chunk_var]][['Trial']] = trial_plotting(filt_data,'PeakV','Peak Velocity (m/s)','peak velocity')
 
 ```
 
