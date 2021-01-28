@@ -28,21 +28,31 @@ from cf_functions import *
 # confdata_file_name = 'vigor_conf_4t'
 
 exp_name = '4t_180trial_4block' # Change this to determine which data set to use
-file_name = 'vigor_conf_postsqueeze_'+exp_name+'.pickle'
 confdata_file_name = 'vigor_conf_4t_180trial_4block'
+
+cfdata = []
+target_data = []
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname+'\\..\\')
 
 os.chdir(exp_name+'/Data')
-with open(file_name,'rb') as f:
-    temp = pickle.load(f)
-    cfdata = temp[0]
-    target_data = temp[1]
-    del temp
-    os.chdir('..')
 
+pickle_files = []
+n_files = 0
+for file in os.listdir(): 
+    if file.endswith('.pickle'):
+        file_name = 'vigor_conf_postsqueeze_'+exp_name+'_'+str(n_files)+'.pickle'
+        with open(file_name,'rb') as f:
+            temp = pickle.load(f)
+            cfdata.append(temp[0])
+            target_data.append(temp[1])
+            del temp
+        n_files += 1
+os.chdir('..')
+
+#%%
 # Probably outdated, more a check to not use these files. Can be changed if we
 # want to exclude specific subjects.
 skip_files = ['Pilot_CK_4t_180trial_4block.zip',

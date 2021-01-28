@@ -65,6 +65,7 @@ for file in os.listdir('Data'):
     if file.endswith('.zip') and file not in already_pulled:
         n_files += 1
         zip_files.append(file)
+n_subj = n_files
 
 print('Zip Files:')
 for k, filename in enumerate(zip_files):
@@ -136,12 +137,12 @@ if len(already_pulled)>0 and n_files>0:
         n_call = 0
         print('Squeezin Subject: '+str(s+1))
         t = time.time()
-        cfdata[s+len(already_pulled)], n_call = squeezin2(cfdata[s], mltype, n_call)
+        cfdata[s+len(already_pulled)], n_call = squeezin2(cfdata[s+len(already_pulled)], mltype, n_call)
         print('Number of Calls: ' + str(n_call))
         print('Elapsed Time: ' +str(time.time()-t))
+        n_call = 0
+        target_data[s+len(already_pulled)], n_call = squeezin2(target_data[s+len(already_pulled)], mltype, n_call)
     print('Squeeze Target Data')
-    n_call = 0
-    target_data, n_call = squeezin2(target_data, mltype, n_call)
 elif n_files>0:
     for s, subj in enumerate(cfdata):
         n_call = 0
@@ -154,12 +155,16 @@ elif n_files>0:
     n_call = 0
     target_data, n_call = squeezin2(target_data, mltype, n_call)
 
+#%%
 # Save the data.
+# file_name = 'vigor_conf_postsqueeze_'+exp_name+'.pickle'
 if save_data:
     os.chdir('Data')
-    with open(file_name, 'wb') as f:
-        print('Post Squeeze data saved as: '+file_name)
-        pickle.dump([cfdata, target_data, file_name], f)
+    for s, subj in enumerate(cfdata):
+        file_name = 'vigor_conf_postsqueeze_'+exp_name+'_'+str(s)+'.pickle'
+        with open(file_name, 'wb') as f:
+            print('Post Squeeze data saved as: '+file_name)
+            pickle.dump([cfdata[s], target_data[s], file_name], f)
     os.chdir('..')
 
 # %%
