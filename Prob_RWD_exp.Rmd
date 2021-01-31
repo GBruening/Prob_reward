@@ -43,9 +43,9 @@ theme_set(theme_classic(base_family = "Times")+
 
 # # Set these lines to the base directory of the experiment.
 # setwd('d:/Users/Gary/Google Drive/Yan Experiment')
-main_folder = 'd:/Users/Gary/Google Drive/Yan Experiment'
+# main_folder = 'd:/Users/Gary/Google Drive/Yan Experiment'
 # setwd('F:/Google Drive/Yan Experiment')
-# main_folder = 'D:/Google Drive/Yan Experiment'
+main_folder = 'D:/Google Drive/Yan Experiment'
 setwd(main_folder)
 
 exp_name = '4t_180trial_4block'
