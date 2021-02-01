@@ -101,7 +101,7 @@ for (k in 1:length(non_famil_data$trial)){
 }
 non_famil_data$probs = round(probs,2)
 non_famil_data$block = blocks
-adfsasdffadsasdfasfd
+
 # ==================== Renaming =================
 dan_names = c('Subject',
               'Trial',
@@ -636,7 +636,7 @@ trial_plotting <- function(data,
   trial_slope <- lm$coef[2]
   if (trial_p_val<0.05){
     yesno = 'WAS'
-    if (trial_slope<0.05){
+    if (trial_slope>0){
       slope = ' INCREASED'
     } else {
       slope = ' DECREASED'
@@ -1079,7 +1079,7 @@ priordiffprob_str_gen <- function(lm_prob_prior, lm_prior1, lm_prior0, variable,
 ```{r, echo = FALSE, warning = FALSE}
 chunk_var = 'PeakV'
 chunk_var_lab = 'Peak Velocity'
-
+non_famil_data$react_time
 plots[[chunk_var]][['abs']] <- Prob_plotting(data= filt_data,
                                              prob_method = 'Probability',
                                              plot_var = chunk_var,
@@ -1110,7 +1110,8 @@ kable(pvalue_table_func(filt_data,
                         Prior_RWD = 'no'),
       caption = paste(chunk_var_lab,' P-Values for effect of Probability',sep=''))
 
-plots[[chunk_var]][['Delta']][['plot']]
+plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['plot']],
+          ncol=2)
 
 ```
 
@@ -1274,14 +1275,15 @@ chunk_var_lab = 'Reaction Time'
 plots[[chunk_var]][['abs']] <- Prob_plotting(data= filt_data,
                                              prob_method = 'Probability',
                                              plot_var = chunk_var,
-                                             var_lab = paste(chunk_var_lab,' (m/s)',sep=''),
+                                             var_lab = paste(chunk_var_lab,' (s)',sep=''),
                                              plot_type = 'nv',
                                              title_lab = 'ABS',
                                              Prior_RWD = '0')
+
 plots[[chunk_var]][['Delta']] <- Prob_plotting(data= filt_data,
                                                prob_method = 'Probability',
                                                plot_var = paste('Delta',chunk_var,sep=''),
-                                               var_lab = paste(chunk_var_lab,' DELTA (m/s)',sep=''),
+                                               var_lab = paste(chunk_var_lab,' DELTA (s)',sep=''),
                                                plot_type = 'nv',
                                                title_lab = 'DELTA',
                                                Prior_RWD = '0')
@@ -1301,7 +1303,8 @@ kable(pvalue_table_func(filt_data,
                         Prior_RWD = 'no'),
       caption = paste(chunk_var_lab,' P-Values for effect of Probability',sep=''))
 
-plots[[chunk_var]][['Delta']][['plot']]
+plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['plot']],
+          ncol=2)
 
 ```
 
@@ -1322,7 +1325,7 @@ kable(tukey_test_table(cur_plot$tukey_test),caption = paste('Tukey HSD test for 
 
 ```{r, echo = FALSE, warning = FALSE}
 
-plots[[chunk_var]][['Trial']] = trial_plotting(filt_data,'PeakV','Peak Velocity (m/s)','peak velocity')
+plots[[chunk_var]][['Trial']] = trial_plotting(filt_data,chunk_var,paste(chunk_var_lab,' (s)',sep=''),chunk_var_lab)
 
 ```
 
@@ -1344,7 +1347,7 @@ plots[[chunk_var]][['Trial']][['plot']]
 plots[[chunk_var]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
                                                   prob_method = 'Probability',
                                                   plot_var = chunk_var,
-                                                  var_lab = paste(chunk_var_lab,' (m/s)',sep=''),
+                                                  var_lab = paste(chunk_var_lab,' (s)',sep=''),
                                                   plot_type = 'bar',
                                                   title_lab = 'ABS',
                                                   Prior_RWD = 'Prior_RWD')
@@ -1370,7 +1373,7 @@ plots[[chunk_var]][['Prior_RWD_bar']][['plot']]
 plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
                                                  prob_method = 'Probability',
                                                  plot_var = chunk_var,
-                                                 var_lab = paste(chunk_var_lab,' (m/s)',sep=''),
+                                                 var_lab = paste(chunk_var_lab,' (s)',sep=''),
                                                  plot_type = 'nv',
                                                  title_lab = 'ABS',
                                                  Prior_RWD = 'Prior_RWD')
@@ -1402,7 +1405,7 @@ plots[[chunk_var]][['Prior_RWD']][['plot']]
 plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
                                                      prob_method = 'Probability',
                                                      plot_var = paste('DiffPrior_',chunk_var,sep=''),
-                                                     var_lab = 'Peak Velocity Diff Prior (m/s)',
+                                                     var_lab = paste(chunk_var_lab,' Diff Prior (s)',sep=''), 
                                                      plot_type = 'bar',
                                                      title_lab = 'Diff',
                                                      Prior_RWD = 'Prior_RWD')
@@ -1433,7 +1436,7 @@ plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']][['plot']]
 plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']] <- Prob_plotting(data = filter(filt_data,Trial_in_Block>1),
                                                      prob_method = 'DiffPrior_Probability',
                                                      plot_var = paste('DiffPrior_',chunk_var,sep=''),
-                                                     var_lab = 'Peak Velocity Diff Prior (m/s)',
+                                                     var_lab = paste(chunk_var_lab,' Diff Prior (s)',sep=''),
                                                      plot_type = 'nv',
                                                      title_lab = 'Diff',
                                                      Prior_RWD = 'Prior_RWD')
