@@ -1239,7 +1239,7 @@ plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']][['plot']]
 ### Interaction of Prior Reward and Change in Probability of Reward
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
-plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']] <- Prob_plotting(data= filt_data,
+plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']] <- Prob_plotting(data = filter(filt_data,Trial_in_Block>1),
                                                      prob_method = 'DiffPrior_Probability',
                                                      plot_var = paste('DiffPrior_',chunk_var,sep=''),
                                                      var_lab = 'Peak Velocity Diff Prior (m/s)',
