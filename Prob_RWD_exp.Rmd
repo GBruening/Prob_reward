@@ -1097,6 +1097,9 @@ cur_plot = plots[[chunk_var]][['abs']]
 
 `r prob_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$coef[2],chunk_var_lab)`
 
+The equation below shows the linear model used:
+$$ Outcome \sim Probability + (1|Subject) $$
+
 ```{r, echo = FALSE, warning = FALSE}
 kable(pvalue_table_func(filt_data,
                         plot_var = chunk_var,
@@ -1130,6 +1133,9 @@ plots[[chunk_var]][['Trial']] = trial_plotting(filt_data,'PeakV','Peak Velocity 
 ```
 
 `r plots[[chunk_var]][['Trial']][['trial_str']]`
+
+The linear model used to predict effect of trial is shown below:
+$$ Outcome \sim B*Trial + (1|Subject) $$
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
@@ -1179,6 +1185,10 @@ cur_plot <- plots[[chunk_var]][['Prior_RWD']]
 ```
 
 `r prior_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+The linear model used to predict the effect of probability and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
 
 ```{r, echo = FALSE, warning = FALSE}
 
