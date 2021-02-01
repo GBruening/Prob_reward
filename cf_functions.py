@@ -304,8 +304,9 @@ def get_mvttimes(data, target_data):
 
     b += idx_targetshow
     a = b
+    
     for idx_onset in np.arange(b,50,-1):
-        if np.std(t_diff[idx_onset+50:idx_onset])<2e-3 and v[idx_onset]<.03:
+        if np.std(t_diff[idx_onset:idx_onset+50])<2e-3 and v[idx_onset]<.03:
             break
     try:
         idx_onset += 0
@@ -356,6 +357,8 @@ def get_mvttimes(data, target_data):
     
     # Get reaction time
     react_time = 0.001*(idx_onset-idx_targetshow)
+    if react_time < -0.1:
+        print('REACT < -0.1 U BORKED IT.')
 
     # Get peak velocity
     peak_vel = np.max(data['Right_HandVel'][idx_onset:idx_moveback])
