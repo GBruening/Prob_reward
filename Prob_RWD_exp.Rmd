@@ -494,6 +494,9 @@ Prob_plotting <- function(data,
                          Probability == 0 | Probability == 1)
     ano14 = anova(lm(plot_var ~ Probability + (1|Subject),
                             data = t_test_data))
+    
+    ano14aov = summary(aov(plot_var ~ factor(Probability) + (1|Subject),
+                            data = t_test_data))
     t_test = t.test(t_test_data[t_test_data$Probability == 0,'plot_var'],
                     t_test_data[t_test_data$Probability == 1,'plot_var'],
                     paired = TRUE)

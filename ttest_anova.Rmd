@@ -1,0 +1,376 @@
+---
+title: "ttest_anova"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(ggthemes)
+library(lmtest)
+library(tidyr)
+library(dplyr)
+library(multcomp)
+library(lme4)
+library(nlstools)
+library(knitr)
+library("RColorBrewer")
+library(wesanderson)
+library(extrafont)
+library(cowplot)
+library(latex2exp)
+library('R.matlab')
+library(boot)
+library(viridis)
+library(english)
+
+#====================== Load Fonts ================
+# font_import()
+loadfonts(device='win')
+
+theme_set(theme_classic(base_family = "Times")+
+            theme(text = element_text(color='black'),
+                  axis.text.x = element_text(color='black'),
+                  axis.text.y = element_text(color='black'),
+                  axis.ticks  = element_line(color='black'),
+                  axis.line = element_line(color='black',linetype='solid'),
+                  plot.title = element_text(hjust = 0.5)))
+
+# # Set these lines to the base directory of the experiment.
+# setwd('d:/Users/Gary/Google Drive/Yan Experiment')
+# main_folder = 'd:/Users/Gary/Google Drive/Yan Experiment'
+# setwd('F:/Google Drive/Yan Experiment')
+main_folder = 'D:/Google Drive/Yan Experiment'
+setwd(main_folder)
+
+exp_name = '4t_180trial_4block'
+setwd(exp_name)
+raw_data = read.csv(paste('vigor_conf_',exp_name,'.csv',sep=''))
+
+raw_data$vigor = 1/(raw_data$react_time+raw_data$move_dur)
+raw_data$total_dur = raw_data$react_time+raw_data$move_dur
+
+#====================== Filter and add Probs ================
+rm_fail_data = raw_data[raw_data$rewarded != -1,]
+famil_data = filter(rm_fail_data,trial<=16)
+prefilt_data = filter(rm_fail_data,trial<=(16+36))
+
+non_famil_data = rm_fail_data[rm_fail_data$trial >= 17,]
+
+trials = c()
+counter = 1
+subj = 1
+for (k in 1:length(non_famil_data$trial)){
+  if (non_famil_data[k,]$subj!=subj){
+    counter = 1
+    subj = non_famil_data[k,]$subj
+  }
+  trials = c(trials,counter)
+  if (non_famil_data[k,'diff_prob']>0){
+    non_famil_data[k,'diff_prob'] = non_famil_data[k,'diff_prob']-.01
+  }
+  counter = counter + 1
+}
+non_famil_data$trial_in_block= (trials-1)%%180+1
+
+blocks = c()
+probs = c()
+counter = 1
+subj = 1
+block = 1
+
+block_prob = matrix(c(1,.66,.33,0,.33,0,1,.66,0,1,.66,.33,.66,.33,0,1),
+                    nrow = 4,
+                    byrow = TRUE)
+
+for (k in 1:length(non_famil_data$trial)){
+  if (non_famil_data[k,]$subj!=subj){
+    subj = non_famil_data[k,]$subj
+    block = 1
+  }
+  blocks = c(blocks,block)
+  probs = c(probs,block_prob[block,non_famil_data[k,]$target])
+  if (non_famil_data[k,]$trial_in_block == 180){
+    block = block + 1
+  }
+}
+non_famil_data$probs = round(probs,2)
+non_famil_data$block = blocks
+
+# ==================== Renaming =================
+dan_names = c('Subject',
+              'Trial',
+              'Block',
+              'Prior_RWD',
+              'Target',
+              'Probability',
+              'Vigor',
+              'Duration',
+              'TotalDur',
+              'PeakV',
+              'ReturnPeakV',
+              'RT',
+              'RWD',
+              'Error_Dist',
+              'Error_Ang',
+              'Ret_Error',
+              'Max_Ex',
+              'Trial_in_Block',
+              'Target_num',
+              'NRWD_Run',
+              'DiffCur_Prob')
+
+gary_names = c('subj',
+               'trial',
+               'block',
+               'one_back_rate',
+               'target',
+               'probs',
+               'vigor',
+               'move_dur',
+               'total_dur',
+               'peak_vel',
+               'peak_vel_moveback',
+               'react_time',
+               'rewarded',
+               'error_dist',
+               'error_angle',
+               'move_back_error',
+               'maxex',
+               'trial_in_block',
+               'target_num',
+               't_since_reward',
+               'diff_prob')
+
+k = 0
+for (dan_name in dan_names){
+  k = k+1
+  names(non_famil_data)[names(non_famil_data) == gary_names[k]] <- dan_name
+}
+names(non_famil_data)[names(non_famil_data) == 'react_vel'] <- 'RT_vel'
+
+#====================== Create Data Frame Variable Names ================
+testable_vars_abs = c('Vigor',
+                      'TotalDur',
+                      'Duration',
+                      'PeakV',
+                      'ReturnPeakV',
+                      'RT',
+                      'RT_vel',
+                      'Error_Dist',
+                      'Error_Ang',
+                      'Ret_Error',
+                      'Max_Ex')
+
+testable_labels_abs = c('Vigor (???)',
+                        'Total Duration (s)',
+                        'Movement Duration (s)',
+                        'Peak Velocity (m/s)',
+                        'Peak Velocity Moveback (m/s)',
+                        'Reaction time (s)',
+                        'Reaction Velocity (m/s)',
+                        'Error Distance (m)',
+                        'Error Angle (deg)',
+                        'Return Error (m)',
+                        'Maximum Excursion (m)')
+
+testable_vars_norm = c('NormVigor',
+                       'NormTotalDur',
+                       'NormDuration',
+                       'NormPeakV',
+                       'NormReturnPeakV',
+                       'NormRT',
+                       'NormRT_vel',
+                       'NormError_Dist',
+                       'NormError_Ang',
+                       'NormRet_Error',
+                       'NormMax_Ex')
+
+testable_labels_norm = c('Vigor Norm (???)',
+                         'Total Duration Norm (s)',
+                         'Movement Duration Norm (s)',
+                         'Peak Velocity Norm (m/s)',
+                         'Peak Velocity Moveback Norm (m/s)',
+                         'Reaction time Norm (s)',
+                         'Reaction Velocity Norm (m/s)',
+                         'Error Distance Norm (m)',
+                         'Error Angle Norm (deg)',
+                         'Return Error Norm (m)',
+                         'Maximum Excursion Norm (m)')
+
+testable_vars_diff = c('DeltaVigor',
+                       'DeltaTotalDur',
+                       'DeltaDuration',
+                       'DeltaPeakV',
+                       'DeltaReturnPeakV',
+                       'DeltaRT',
+                       'DeltaRT_vel',
+                       'DeltaError_Dist',
+                       'DeltaError_Ang',
+                       'DeltaRet_Error',
+                       'DeltaMax_Ex')
+
+testable_labels_diff = c('Vigor Delta (???)',
+                         'Total Duration Delta (s)',
+                         'Movement Duration Delta (s)',
+                         'Peak Velocity Delta (m/s)',
+                         'Peak Velocity Moveback Delta (m/s)',
+                         'Reaction time Delta (s)',
+                         'Reaction Velocity Delta (m/s)',
+                         'Error Distance Delta (m)',
+                         'Error Angle Delta (deg)',
+                         'Return Error Delta (m)',
+                         'Maximum Excursion Delta (m)')
+
+# CHECK RADIAL VELOCITY?
+#====================== Add Normalization ================
+# Add Normalization to Not Filtered data.
+
+add_norm_diff_func <- function(data, item){
+  data[,paste('Norm',item,sep='')] = 0
+  data[,paste('Delta',item,sep='')] = 0
+  item_norm = paste('Norm',item,sep='')
+  item_diff = paste('Delta',item,sep='')
+  
+  for (Subject_num in unique(data$Subject)){
+    mean_0 = mean(data[data$r_prob==0 & data$Subject == Subject_num,item])
+    
+    data[data$Subject == Subject_num, item_norm] <- data[data$Subject == Subject_num, item]/mean_0
+    data[data$Subject == Subject_num, item_diff] <- data[data$Subject == Subject_num, item]-mean_0
+    # for (tar in unique(data$Target)){
+    #   mean_0 = mean(data[data$r_prob==0 & data$Subject == Subject_num & data$Target == tar,item])
+    #   
+    #   data[data$Subject == Subject_num & data$Target == tar,item_norm] <- data[data$Subject == Subject_num & data$Target == tar,item]/mean_0
+    #   data[data$Subject == Subject_num & data$Target == tar,item_diff] <- data[data$Subject == Subject_num & data$Target == tar,item]-mean_0
+    # }
+  }
+  return(data)
+}
+
+for (item in testable_vars_abs){
+  non_famil_data <- add_norm_diff_func(non_famil_data,item)
+}
+
+# Init some lists
+ano_res <- list()
+ano14 <- list()
+lme_test <- list()
+lme_test_t14 <- list()
+
+# ============ Add Prior Trial Differences ========
+prior_trial_vars = c('Probability',
+                     'PeakV',
+                     'NormPeakV',
+                     'DeltaPeakV',
+                     'RT')
+for (k in 1:length(non_famil_data$Subject)){
+  for (item in prior_trial_vars){
+    if (non_famil_data[k,'Trial_in_Block'] == 1){
+      non_famil_data[k,paste('DiffPrior_',item,sep='')] = 0
+    } else {
+      non_famil_data[k,paste('DiffPrior_',item,sep='')] = round(as.numeric(non_famil_data[k,item]-non_famil_data[k-1,item]),2)
+    }
+  }
+}
+non_famil_data[non_famil_data$DiffPrior_Prob == -0.67, 'DiffPrior_Probability'] = non_famil_data[non_famil_data$DiffPrior_Prob == -0.67, 'DiffPrior_Probability']+0.01
+non_famil_data[non_famil_data$DiffPrior_Prob == -0.34, 'DiffPrior_Probability'] = non_famil_data[non_famil_data$DiffPrior_Prob == -0.34, 'DiffPrior_Probability']+0.01
+non_famil_data[non_famil_data$DiffPrior_Prob == 0.67, 'DiffPrior_Probability'] = non_famil_data[non_famil_data$DiffPrior_Prob == 0.67, 'DiffPrior_Probability']-0.01
+non_famil_data[non_famil_data$DiffPrior_Prob == 0.34, 'DiffPrior_Probability'] = non_famil_data[non_famil_data$DiffPrior_Prob == 0.34, 'DiffPrior_Probability']-0.01
+
+add_n_back <- function(data,n_back){
+  data[1,paste(as.english(n_back),'_back_rate',sep='')] = 0
+  data[1,paste(as.english(n_back),'_back_rate_tar',sep='')] = 0
+  for (k in 1:length(data[,'Subject'])){
+    subject = data[k,'Subject']
+    block = data[k,'Block']
+    cur_tar = data[k,'Target']
+    cur_trial = data[k,'Trial_in_Block']
+    
+    rate = 0
+    tar_rate = 0
+    nb = 0
+    last_back = cur_trial-n_back
+    
+    if (last_back <= 0){
+      last_back = 1
+    }
+    if(cur_trial == 1){
+      rate = 0
+      tar_rate = 0
+    } else {
+      for (j in (cur_trial-1):last_back){
+        nb = nb + 1
+        rate = rate + (.5^(nb))*data[data[,'Subject'] == subject & data[,'Block'] == block & data[,'Trial_in_Block'] == j,'RWD']
+        
+        if (data[j,'Target'] == cur_tar){
+          tar_rate = tar_rate + (.5^(nb))*data[j,'RWD']
+        } else{
+          tar_rate = tar_rate + (.25^(nb))*data[j,'RWD']
+        }
+      }
+    }
+    data[k,paste(as.english(n_back),'_back_rate',sep='')] = rate
+    data[k,paste(as.english(n_back),'_back_rate_tar',sep='')] = tar_rate
+  }
+  return(data)
+}
+
+for (n_back in c(1)){#},3,5,10)){
+  non_famil_data <- add_n_back(non_famil_data,n_back)
+}
+non_famil_data$one_back_rate <- non_famil_data$one_back_rate*2
+non_famil_data$Prior_RWD <- non_famil_data$one_back_rate
+
+data = non_famil_data
+
+plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability','PeakV')]
+colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability','plot_var')
+
+plotting_data2 = aggregate(plot_var ~ Subject + Probability,plotting_data,mean)
+t_test_data = filter(plotting_data2, 
+                     Probability == 0 | Probability == 1)
+
+ano14 = anova(lm(plot_var ~ Probability + (1|Subject),
+                 data = t_test_data))
+
+ano14_aov = aov(plot_var ~ factor(Probability) + (1|Subject),
+                        data = t_test_data)
+ano14_aov_sum = summary(ano14_aov)
+
+
+t_test = t.test(t_test_data[t_test_data$Probability == 0,'plot_var'],
+                t_test_data[t_test_data$Probability == 1,'plot_var'],
+                paired = TRUE)
+
+# 
+# ano14$`Pr(>F)`[1]
+# ano14_aov_sum
+tukey_pval = TukeyHSD(ano14_aov)$`factor(Probability)`[4]
+# t_test$p.value
+
+```
+
+Anova result using the anova(lm()) function:
+```{r}
+ano14[1,5]
+```
+
+Anova p-val using summary(aov()) function:
+```{r}
+ano14_aov_sum
+```
+
+TukeyHSD pvalue:
+```{r}
+tukey_pval
+```
+
+T-test pval:
+```{r}
+t_test$p.value
+```
+
+
+
