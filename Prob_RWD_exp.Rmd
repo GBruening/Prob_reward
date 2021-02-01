@@ -872,7 +872,7 @@ priorbar_str_gen <- function(ttest_pval, aov_pval, variable){
     yesno = 'WAS NOT'
   }
   aov_pval = formatC(aov_pval,format='e',digits =3)
-  str_aov = paste('Using an ANOVA test, across subjects, the ',variable,' in trials following rewarded trials ',yesno,' statistically different than trials following nonrewarded tirlas (p = ',ttest_pval,')',sep='')
+  str_aov = paste('Using an ANOVA test, across subjects, the ',variable,' in trials following rewarded trials ',yesno,' statistically different than trials following nonrewarded tirlas (p = ',aov_pval,')',sep='')
   return(paste(str_ttest,'\n',str_aov,sep='\n'))
 }
 
