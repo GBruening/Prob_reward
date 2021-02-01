@@ -43,9 +43,9 @@ theme_set(theme_classic(base_family = "Times")+
 
 # # Set these lines to the base directory of the experiment.
 # setwd('d:/Users/Gary/Google Drive/Yan Experiment')
-main_folder = 'd:/Users/Gary/Google Drive/Yan Experiment'
+# main_folder = 'd:/Users/Gary/Google Drive/Yan Experiment'
 # setwd('F:/Google Drive/Yan Experiment')
-# main_folder = 'D:/Google Drive/Yan Experiment'
+main_folder = 'D:/Google Drive/Yan Experiment'
 setwd(main_folder)
 
 exp_name = '4t_180trial_4block'
@@ -480,22 +480,23 @@ Prob_plotting <- function(data,
     plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability',prob_method,plot_var)]
     colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','NRWD_Run','Probability','probability_metric', 'plot_var')
     
-    ano_res2 = anova(lm(plot_var ~ Target + probability_metric + Target*probability_metric + (1|Subject), data = plotting_data))
     
     lme_test = cftest(lmer(plot_var ~ probability_metric + (1|Subject), data = plotting_data))
     lme_test_t14 = cftest(lmer(plot_var ~ probability_metric + (1|Subject),
                                 data = rbind(filter(plotting_data,Probability==1),
                                              filter(plotting_data,Probability==0))))
     
-    plotting_data2 = aggregate(plot_var ~ Subject + Target + Probability,plotting_data,mean)
+    plotting_data2 = aggregate(plot_var ~ Subject + Probability,plotting_data,mean)
     ano_res = anova(lm(plot_var ~ Probability + (1|Subject), data = plotting_data2))
+    tukey_test = TukeyHSD(aov(plot_var ~ factor(Probability) + (1|Subject), data = plotting_data2))
+    
+    t_test_data = filter(plotting_data2, 
+                         Probability == 0 | Probability == 1)
     ano14 = anova(lm(plot_var ~ Probability + (1|Subject),
-                            data = rbind(filter(plotting_data2,Probability==1),
-                                         filter(plotting_data2,Probability==0))))
-    
-    
-    t_test_data = filter(aggregate(plot_var ~ Subject + Probability,plotting_data,mean), Probability == 0 | Probability == 1)
-    t_test = t.test(t_test_data[t_test_data$Probability == 0,'plot_var'], t_test_data[t_test_data$Probability == 1,'plot_var'], paired = TRUE)
+                            data = t_test_data))
+    t_test = t.test(t_test_data[t_test_data$Probability == 0,'plot_var'],
+                    t_test_data[t_test_data$Probability == 1,'plot_var'],
+                    paired = TRUE)
     
     if (plot_type == 'violin'){
       #====================== Violin Plot ================
@@ -607,6 +608,9 @@ Prob_plotting <- function(data,
   }
   if (exists('lme_test_Prior0')){
     ret_list[['lme_test_Prior0']] = lme_test_Prior0
+  }
+  if (exists('tukey_test')){
+    ret_list[['tukey_test']] = tukey_test
   }
   
   return(ret_list)
@@ -767,7 +771,6 @@ pvalue_table_func <- function(data, plot_var, prob_metric, Prior_RWD, targets = 
   }
 }
 
-
 ttest_table_func <- function(data, plot_var, prob_metric, Prior_RWD, targets = 'all'){
   
   plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',prob_metric,plot_var)]
@@ -803,6 +806,19 @@ ttest_table_func <- function(data, plot_var, prob_metric, Prior_RWD, targets = '
   rownames(lm_table) <- c('T-test','T-Test Prior==1','T-Test Prior==0')
   colnames(lm_table) <- c('P-Value')
   return(lm_table)
+}
+
+tukey_test_table <- function(tukey_test){
+  ptab = matrix(,ncol=3,nrow=3)
+  ptab[1,1] = tukey_test$`factor(Probability)`[1,4]
+  ptab[1,2] = tukey_test$`factor(Probability)`[2,4]
+  ptab[1,3] = tukey_test$`factor(Probability)`[3,4]
+  ptab[2,2] = tukey_test$`factor(Probability)`[4,4]
+  ptab[2,3] = tukey_test$`factor(Probability)`[5,4]
+  ptab[3,3] = tukey_test$`factor(Probability)`[6,4]
+  rownames(ptab) = c('0','1/3','2/3')
+  colnames(ptab) = c('1/3','2/3','1')
+  return(ptab)
 }
 
 filt_data <- non_famil_data
@@ -856,7 +872,7 @@ priorbar_str_gen <- function(ttest_pval, aov_pval, variable){
     yesno = 'WAS NOT'
   }
   aov_pval = formatC(aov_pval,format='e',digits =3)
-  str_aov = paste('Using an ANOVA test, across subjects, the ',variable,' in trials following rewarded trials ',yesno,' statistically different than trials following nonrewarded tirlas (p = ',ttest_pval,')',sep='')
+  str_aov = paste('Using an ANOVA test, across subjects, the ',variable,' in trials following rewarded trials ',yesno,' statistically different than trials following nonrewarded tirlas (p = ',aov_pval,')',sep='')
   return(paste(str_ttest,'\n',str_aov,sep='\n'))
 }
 
@@ -1062,24 +1078,27 @@ chunk_var = 'PeakV'
 chunk_var_lab = 'Peak Velocity'
 
 plots[[chunk_var]][['abs']] <- Prob_plotting(data= filt_data,
-                                prob_method = 'Probability',
-                                plot_var = chunk_var,
-                                var_lab = paste(chunk_var_lab,' (m/s)',sep=''),
-                                plot_type = 'nv',
-                                title_lab = 'ABS',
-                                Prior_RWD = '0')
+                                             prob_method = 'Probability',
+                                             plot_var = chunk_var,
+                                             var_lab = paste(chunk_var_lab,' (m/s)',sep=''),
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = '0')
 plots[[chunk_var]][['Delta']] <- Prob_plotting(data= filt_data,
-                                  prob_method = 'Probability',
-                                  plot_var = paste('Delta',chunk_var,sep=''),
-                                  var_lab = paste(chunk_var_lab,'Peak Velocity DELTA (m/s)',sep=''),
-                                  plot_type = 'nv',
-                                  title_lab = 'DELTA',
-                                  Prior_RWD = '0')
+                                               prob_method = 'Probability',
+                                               plot_var = paste('Delta',chunk_var,sep=''),
+                                               var_lab = paste(chunk_var_lab,'Peak Velocity DELTA (m/s)',sep=''),
+                                               plot_type = 'nv',
+                                               title_lab = 'DELTA',
+                                               Prior_RWD = '0')
 
 cur_plot = plots[[chunk_var]][['abs']]
 ```
 
 `r prob_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$coef[2],chunk_var_lab)`
+
+The equation below shows the linear model used:
+$$ Outcome \sim Probability + (1|Subject) $$
 
 ```{r, echo = FALSE, warning = FALSE}
 kable(pvalue_table_func(filt_data,
@@ -1091,6 +1110,15 @@ kable(pvalue_table_func(filt_data,
 plots[[chunk_var]][['Delta']][['plot']]
 
 ```
+
+We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:peakvtukeytable)).
+
+```{r peakvtukeytable, echo = FALSE, warning = FALSE, message = FALSE}
+
+kable(tukey_test_table(cur_plot$tukey_test),caption = paste('Tukey HSD test for ',chunk_var_lab,sep=''))
+
+```
+
 
 #### Comparison of 0% and 100% Reward
 
@@ -1105,6 +1133,9 @@ plots[[chunk_var]][['Trial']] = trial_plotting(filt_data,'PeakV','Peak Velocity 
 ```
 
 `r plots[[chunk_var]][['Trial']][['trial_str']]`
+
+The linear model used to predict effect of trial is shown below:
+$$ Outcome \sim B*Trial + (1|Subject) $$
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
@@ -1154,6 +1185,10 @@ cur_plot <- plots[[chunk_var]][['Prior_RWD']]
 ```
 
 `r prior_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+The linear model used to predict the effect of probability and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
 
 ```{r, echo = FALSE, warning = FALSE}
 
