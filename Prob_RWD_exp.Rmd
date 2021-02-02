@@ -1074,19 +1074,187 @@ priordiffprob_str_gen <- function(lm_prob_prior, lm_prior1, lm_prior0, variable,
   return(paste(str_lm,'\n',str_lm_split,sep='\n'))
 }
 ```
+
+
+```{r, echo = FALSE, warning = FALSE}
+
+# Make a summary Bar chart for just effect of Probability
+plots[['PeakV']][['abs']] <- Prob_plotting(data= filt_data,
+                                             prob_method = 'Probability',
+                                             plot_var = 'PeakV',
+                                             var_lab = 'Peak Velocity (m/s)',
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = '0')
+
+plots[['RT']][['abs']] <- Prob_plotting(data= filt_data,
+                                             prob_method = 'Probability',
+                                             plot_var = 'RT',
+                                             var_lab = 'Reaction Time (s)',
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = '0')
+
+plots[['Max_Ex']][['abs']] <- Prob_plotting(data= filt_data,
+                                             prob_method = 'Probability',
+                                             plot_var = 'Max_Ex',
+                                             var_lab = 'Maximum Excursion (m)',
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = '0')
+
+plots[['Duration']][['abs']] <- Prob_plotting(data= filt_data,
+                                             prob_method = 'Probability',
+                                             plot_var = 'Duration',
+                                             var_lab = 'Movement Duration (s)',
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = '0')
+
+plots[['TotalDur']][['abs']] <- Prob_plotting(data= filt_data,
+                                             prob_method = 'Probability',
+                                             plot_var = 'TotalDur',
+                                             var_lab = 'Total Duration (s)',
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = '0')
+
+
+plots[['Vigor']][['abs']] <- Prob_plotting(data= filt_data,
+                                             prob_method = 'Probability',
+                                             plot_var = 'Vigor',
+                                             var_lab = 'Vigor',
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = '0')
+
+p_vals = c(plots[['PeakV']][['abs']]$lm$test$pvalues[2],
+           plots[['RT']][['abs']]$lm$test$pvalues[2],
+           plots[['Max_Ex']][['abs']]$lm$test$pvalues[2],
+           plots[['Duration']][['abs']]$lm$test$pvalues[2],
+           plots[['TotalDur']][['abs']]$lm$test$pvalues[2],
+           plots[['Vigor']][['abs']]$lm$test$pvalues[2])
+
+p_val_labs = c('PeakV',
+               'RT',
+               'Max_Ex',
+               'Duration',
+               'TotalDur',
+               'Vigor')
+
+p_val_df = data.frame('variable' = p_val_labs, 'p_val' = p_vals, 'var_num' = 1:6)
+
+pval_plot <- ggplot()+
+  geom_bar(data=p_val_df,
+           aes(x=factor(var_num),
+               y=p_val),
+           stat = 'identity')+
+  scale_x_discrete(limits = c(1:6), labels = p_val_df$variable)+
+  labs(x = 'Tested Variable',
+       y = 'LMER P-Value')+
+  geom_hline(yintercept =  0.05,
+             color = 'red',
+             size = 2)+
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))+
+  scale_y_continuous(expand = c(0,0))
+
+# Make a summary Bar chart for effect of Probability and prior reward
+plots[['PeakV']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                             prob_method = 'Probability',
+                                             plot_var = 'PeakV',
+                                             var_lab = 'Peak Velocity (m/s)',
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = 'Prior_RWD')
+
+plots[['RT']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                             prob_method = 'Probability',
+                                             plot_var = 'RT',
+                                             var_lab = 'Reaction Time (s)',
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = 'Prior_RWD')
+
+plots[['Max_Ex']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                             prob_method = 'Probability',
+                                             plot_var = 'Max_Ex',
+                                             var_lab = 'Maximum Excursion (m)',
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = 'Prior_RWD')
+
+plots[['Duration']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                             prob_method = 'Probability',
+                                             plot_var = 'Duration',
+                                             var_lab = 'Movement Duration (s)',
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = 'Prior_RWD')
+
+plots[['TotalDur']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                             prob_method = 'Probability',
+                                             plot_var = 'TotalDur',
+                                             var_lab = 'Total Duration (s)',
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = 'Prior_RWD')
+
+
+plots[['Vigor']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                             prob_method = 'Probability',
+                                             plot_var = 'Vigor',
+                                             var_lab = 'Vigor',
+                                             plot_type = 'nv',
+                                             title_lab = 'ABS',
+                                             Prior_RWD = 'Prior_RWD')
+
+testable_vars = c('PeakV','RT','Max_Ex','Duration','TotalDur','Vigor')
+p_vals_prob  = c()
+p_vals_prior = c()
+p_vals_int   = c()
+for (item in testable_vars){
+  p_vals_prob  = c(p_vals_prob, plots[[item]][['Prior_RWD']]$lm$test$pvalues[2])
+  p_vals_prior = c(p_vals_prior,plots[[item]][['Prior_RWD']]$lm$test$pvalues[3])
+  p_vals_int   = c(p_vals_int,  plots[[item]][['Prior_RWD']]$lm$test$pvalues[4])
+}
+
+prior_sum_df = data.frame('var_num' = rep(1:6,3),
+                          'variable' = rep(testable_vars,3), 
+                          'p_val_metric' = c(rep('1',6), # Probability
+                                             rep('2',6), # Prior
+                                             rep('3',6)), # Interaction
+                          'p_val' = c(p_vals_prob,p_vals_prior,p_vals_int))
+
+pval_plot_prior <- ggplot()+
+  geom_bar(data=prior_sum_df,
+           aes(x = factor(var_num),
+               y = p_val,
+               fill = factor(p_val_metric)),
+           stat = 'identity',
+           position = 'dodge')+
+  scale_x_discrete(breaks = c(1:6), labels = testable_vars)+
+  labs(x = 'Tested Variable',
+       y = 'LMER P-Value',
+       fill = 'P Value\nMetric')+
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))+
+  scale_y_continuous(expand = c(0,0))+
+  geom_hline(yintercept =  0.05,
+             color = 'black',
+             size = 2)+
+  scale_fill_discrete(labels = c('Probability','Prior RWD','Interaction'))
+
+
+```
+
+
+
 # Peak Velocity
 ## Effect of Probability
 ```{r, echo = FALSE, warning = FALSE}
 chunk_var = 'PeakV'
 chunk_var_lab = 'Peak Velocity'
 non_famil_data$react_time
-plots[[chunk_var]][['abs']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = chunk_var,
-                                             var_lab = paste(chunk_var_lab,' (m/s)',sep=''),
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = '0')
+
 plots[[chunk_var]][['Delta']] <- Prob_plotting(data= filt_data,
                                                prob_method = 'Probability',
                                                plot_var = paste('Delta',chunk_var,sep=''),
@@ -1271,14 +1439,6 @@ plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
 ```{r, echo = FALSE, warning = FALSE}
 chunk_var = 'RT'
 chunk_var_lab = 'Reaction Time'
-
-plots[[chunk_var]][['abs']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = chunk_var,
-                                             var_lab = paste(chunk_var_lab,' (s)',sep=''),
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = '0')
 
 plots[[chunk_var]][['Delta']] <- Prob_plotting(data= filt_data,
                                                prob_method = 'Probability',
