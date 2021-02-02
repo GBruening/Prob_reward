@@ -1077,6 +1077,7 @@ priordiffprob_str_gen <- function(lm_prob_prior, lm_prior1, lm_prior0, variable,
 
 
 ```{r, echo = FALSE, warning = FALSE}
+testable_vars = c('PeakV','RT','Max_Ex','Duration','TotalDur','Vigor')
 
 # Make a summary Bar chart for just effect of Probability
 plots[['PeakV']][['abs']] <- Prob_plotting(data= filt_data,
@@ -1128,19 +1129,11 @@ plots[['Vigor']][['abs']] <- Prob_plotting(data= filt_data,
                                              title_lab = 'ABS',
                                              Prior_RWD = '0')
 
-p_vals = c(plots[['PeakV']][['abs']]$lm$test$pvalues[2],
-           plots[['RT']][['abs']]$lm$test$pvalues[2],
-           plots[['Max_Ex']][['abs']]$lm$test$pvalues[2],
-           plots[['Duration']][['abs']]$lm$test$pvalues[2],
-           plots[['TotalDur']][['abs']]$lm$test$pvalues[2],
-           plots[['Vigor']][['abs']]$lm$test$pvalues[2])
-
-p_val_labs = c('PeakV',
-               'RT',
-               'Max_Ex',
-               'Duration',
-               'TotalDur',
-               'Vigor')
+p_val_labs = testable_vars
+p_vals  = c()
+for (item in testable_vars){
+  p_vals  = c(p_vals, plots[[item]][['Prior_RWD']]$lm$test$pvalues[2])
+}
 
 p_val_df = data.frame('variable' = p_val_labs, 'p_val' = p_vals, 'var_num' = 1:6)
 
@@ -1149,7 +1142,7 @@ pval_plot <- ggplot()+
            aes(x=factor(var_num),
                y=p_val),
            stat = 'identity')+
-  scale_x_discrete(limits = c(1:6), labels = p_val_df$variable)+
+  scale_x_discrete(breaks = c(1:6), labels = testable_vars)+
   labs(x = 'Tested Variable',
        y = 'LMER P-Value')+
   geom_hline(yintercept =  0.05,
@@ -1157,6 +1150,18 @@ pval_plot <- ggplot()+
              size = 2)+
   theme(axis.text.x = element_text(angle = 30, hjust = 1))+
   scale_y_continuous(expand = c(0,0))
+
+for (row in 1:(nrow(p_val_df))){
+  if (p_val_df[row,'p_val']<.05){
+    y_val = p_val_df[row,'p_val']+0.02
+    x_pos = row
+    eval(parse(text = paste('pval_plot <- pval_plot + 
+                       geom_text(aes(x = ',x_pos,', y = ',y_val,'),
+                       label = \'*\',
+                       size = 10,
+                       color = \'black\')',sep='')))
+  }
+}
 
 # Make a summary Bar chart for effect of Probability and prior reward
 plots[['PeakV']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
@@ -1208,7 +1213,6 @@ plots[['Vigor']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
                                              title_lab = 'ABS',
                                              Prior_RWD = 'Prior_RWD')
 
-testable_vars = c('PeakV','RT','Max_Ex','Duration','TotalDur','Vigor')
 p_vals_prob  = c()
 p_vals_prior = c()
 p_vals_int   = c()
@@ -1242,7 +1246,25 @@ pval_plot_prior <- ggplot()+
              color = 'black',
              size = 2)+
   scale_fill_discrete(labels = c('Probability','Prior RWD','Interaction'))
+pval_plot_prior
 
+for (row in 1:(nrow(prior_sum_df))){
+  if (prior_sum_df[row,'p_val']<.05){
+    y_val = prior_sum_df[row,'p_val']+0.02
+    x_pos = match(prior_sum_df[row,'variable'],testable_vars)
+    if (prior_sum_df[row,'p_val_metric'] == 1){
+      x_pos = x_pos - 0.3
+    } else if (prior_sum_df[row,'p_val_metric'] == 3){
+      x_pos = x_pos + 0.3
+    }
+    
+    eval(parse(text = paste('pval_plot_prior <- pval_plot_prior + 
+                       geom_text(aes(x = ',x_pos,', y = ',y_val,'),
+                       label = \'*\',
+                       size = 10,
+                       color = \'black\')',sep='')))
+  }
+}
 
 ```
 
