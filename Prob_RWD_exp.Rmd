@@ -1340,7 +1340,7 @@ plots[[chunk_var]][['Trial']][['plot']]
 
 ```
 
-## Peak Velocity Following Reward
+## Reaction Time Following Reward
 
 ```{r, echo = FALSE, warning = FALSE}
 

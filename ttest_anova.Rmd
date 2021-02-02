@@ -337,8 +337,10 @@ ano14 = anova(lm(plot_var ~ Probability + (1|Subject),
 
 ano14_aov = aov(plot_var ~ factor(Probability) + (1|Subject),
                         data = t_test_data)
+
 ano14_aov_sum = summary(ano14_aov)
 
+t.test(plot_var~Probability,data = t_test_data,paired=TRUE)
 
 t_test = t.test(t_test_data[t_test_data$Probability == 0,'plot_var'],
                 t_test_data[t_test_data$Probability == 1,'plot_var'],
