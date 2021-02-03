@@ -1576,8 +1576,12 @@ kable(tukey_test_table(cur_plot$tukey_test),caption = paste('Tukey HSD test for 
 ## Effect of Trial
 
 ```{r, echo = FALSE, warning = FALSE}
+Q = quantile(filt_data[[chunk_var]], probs=c(.25, .75), na.rm = FALSE)
+iqr = IQR(filt_data[[chunk_var]])
+high = Q[2]+1.5*iqr
+low  = Q[1]-1.5*iqr
 
-plots[[chunk_var]][['Trial']] = trial_plotting(filt_data,chunk_var,paste(chunk_var_lab,' (s)',sep=''),chunk_var_lab)
+plots[[chunk_var]][['Trial']] = trial_plotting(filter(filt_data,RT < high & RT > low),chunk_var,paste(chunk_var_lab,' (s)',sep=''),chunk_var_lab)
 
 ```
 
