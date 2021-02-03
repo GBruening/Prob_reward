@@ -1346,7 +1346,6 @@ plot_grid(pval_plot_prior,pval_plot_prior_split,
 ```{r, echo = FALSE, warning = FALSE}
 chunk_var = 'PeakV'
 chunk_var_lab = 'Peak Velocity'
-non_famil_data$react_time
 
 plots[[chunk_var]][['Delta']] <- Prob_plotting(data= filt_data,
                                                prob_method = 'Probability',
