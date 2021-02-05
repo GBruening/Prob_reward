@@ -828,6 +828,40 @@ tukey_test_table <- function(tukey_test){
   return(ptab)
 }
 
+ttest_post_table <- function(data, plot_var, plot_var_lab){
+  plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',plot_var)]
+  colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability', 'plot_var')
+  
+  data = aggregate(plot_var ~ Probability + Subject, plotting_data, mean)
+  
+  ptab = matrix(,ncol=3,nrow=3)
+  ptab[1,1] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0 | Probability == 0.33), paired = TRUE)$p.value
+  ptab[1,2] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0 | Probability == 0.66), paired = TRUE)$p.value
+  ptab[1,3] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0 | Probability == 1), paired = TRUE)$p.value
+  ptab[2,2] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0.33 | Probability == 0.66), paired = TRUE)$p.value
+  ptab[2,3] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0.33 | Probability == 1), paired = TRUE)$p.value
+  ptab[3,3] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0.66 | Probability == 1), paired = TRUE)$p.value
+  ptab = p.adjust(ptab, method = 'holm')
+  ptab2 = formatC(ptab, format = 'g', digits = 3)
+  ptab2 = unlist(ptab2)
+  
+  k=1
+  for (item in ptab){
+    if (!is.na(item) & item<0.05){
+      ptab2[k] = paste('*',ptab2[k],sep='')
+    }
+    k = k + 1
+  }
+  
+  ptab2 = matrix(ptab2, nrow = 3)
+  rownames(ptab2) = c('0','1/3','2/3')
+  colnames(ptab2) = c('1/3','2/3','1')
+  
+  cap = paste('Paired t-test post hoc comparisons with Holm-Bonferonni correction for ',plot_var_lab,'.',sep = '')
+  
+  return(kable(ptab2,caption = cap))
+}
+
 filt_data <- non_famil_data
 plots <- list()
 
@@ -1376,11 +1410,13 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
 
 ```
 
-We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:peakvtukeytable)).
+We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:peakvttestposttab)).
 
-```{r peakvtukeytable, echo = FALSE, warning = FALSE, message = FALSE}
+```{r peakvttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
-kable(tukey_test_table(cur_plot$tukey_test),caption = paste('Tukey HSD test for ',chunk_var_lab,sep=''))
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab)
 
 ```
 
@@ -1420,6 +1456,7 @@ plots[[chunk_var]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
                                                   title_lab = 'ABS',
                                                   Prior_RWD = 'Prior_RWD')
 
+
 cur_plot <- plots[[chunk_var]][['Prior_RWD_bar']]
 ```
 
@@ -1446,6 +1483,14 @@ plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
                                                  title_lab = 'ABS',
                                                  Prior_RWD = 'Prior_RWD')
 
+plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',chunk_var,sep=''),
+                                                 var_lab = paste('Delta ',chunk_var_lab,' (m/s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
 cur_plot <- plots[[chunk_var]][['Prior_RWD']]
 ```
 
@@ -1455,7 +1500,7 @@ The linear model used to predict the effect of probability and prior reward is:
 
 $$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
 
-```{r, echo = FALSE, warning = FALSE}
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
 
 kable(pvalue_table_func(filt_data,
                         plot_var = chunk_var,
@@ -1463,7 +1508,11 @@ kable(pvalue_table_func(filt_data,
                         Prior_RWD = 'Prior_RWD'),
       caption = 'Peak Velocity P-Values for effect of Probability')
 
-plots[[chunk_var]][['Prior_RWD']][['plot']]
+plot_grid(plots[[chunk_var]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          get_legend(plots[[chunk_var]][['Prior_RWD']][['plot']]),
+          rel_widths = c(1,1,.2),
+          ncol = 3)
 
 ```
 
@@ -1561,11 +1610,13 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
 
 ```
 
-We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:rttukeytable)).
+We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:rtttestposttab)).
 
-```{r rttukeytable, echo = FALSE, warning = FALSE, message = FALSE}
+```{r rtttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
-kable(tukey_test_table(cur_plot$tukey_test),caption = paste('Tukey HSD test for ',chunk_var_lab,sep=''))
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab)
 
 ```
 
@@ -1631,6 +1682,14 @@ plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
                                                  title_lab = 'ABS',
                                                  Prior_RWD = 'Prior_RWD')
 
+plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',chunk_var,sep=''),
+                                                 var_lab = paste('Delta ',chunk_var_lab,' (s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
 cur_plot <- plots[[chunk_var]][['Prior_RWD']]
 ```
 
@@ -1640,7 +1699,7 @@ The linear model used to predict the effect of probability and prior reward is:
 
 $$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
 
-```{r, echo = FALSE, warning = FALSE}
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
 
 kable(pvalue_table_func(filt_data,
                         plot_var = chunk_var,
@@ -1648,7 +1707,11 @@ kable(pvalue_table_func(filt_data,
                         Prior_RWD = 'Prior_RWD'),
       caption = 'Peak Velocity P-Values for effect of Probability')
 
-plots[[chunk_var]][['Prior_RWD']][['plot']]
+plot_grid(plots[[chunk_var]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          get_legend(plots[[chunk_var]][['Prior_RWD']][['plot']]),
+          rel_widths = c(1,1,.2),
+          ncol = 3)
 
 ```
 
@@ -1745,11 +1808,13 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
 
 ```
 
-We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:maxextukeytable)).
+We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:maxexttestposttab)).
 
-```{r maxextukeytable, echo = FALSE, warning = FALSE, message = FALSE}
+```{r maxesttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
-kable(tukey_test_table(cur_plot$tukey_test),caption = paste('Tukey HSD test for ',chunk_var_lab,sep=''))
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab)
 
 ```
 
@@ -1815,6 +1880,14 @@ plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
                                                  title_lab = 'ABS',
                                                  Prior_RWD = 'Prior_RWD')
 
+plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',chunk_var,sep=''),
+                                                 var_lab = paste('Delta ',chunk_var_lab,' (m)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
 cur_plot <- plots[[chunk_var]][['Prior_RWD']]
 ```
 
@@ -1824,7 +1897,7 @@ The linear model used to predict the effect of probability and prior reward is:
 
 $$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
 
-```{r, echo = FALSE, warning = FALSE}
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
 
 kable(pvalue_table_func(filt_data,
                         plot_var = chunk_var,
@@ -1832,7 +1905,11 @@ kable(pvalue_table_func(filt_data,
                         Prior_RWD = 'Prior_RWD'),
       caption = 'Peak Velocity P-Values for effect of Probability')
 
-plots[[chunk_var]][['Prior_RWD']][['plot']]
+plot_grid(plots[[chunk_var]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          get_legend(plots[[chunk_var]][['Prior_RWD']][['plot']]),
+          rel_widths = c(1,1,.2),
+          ncol = 3)
 
 ```
 
@@ -1929,11 +2006,13 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
 
 ```
 
-We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:durationtukeytable)).
+We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:durationttestposttab)).
 
-```{r durationtukeytable, echo = FALSE, warning = FALSE, message = FALSE}
+```{r durationttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
-kable(tukey_test_table(cur_plot$tukey_test),caption = paste('Tukey HSD test for ',chunk_var_lab,sep=''))
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab)
 
 ```
 
@@ -1999,6 +2078,14 @@ plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
                                                  title_lab = 'ABS',
                                                  Prior_RWD = 'Prior_RWD')
 
+plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',chunk_var,sep=''),
+                                                 var_lab = paste('Delta ',chunk_var_lab,' (s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
 cur_plot <- plots[[chunk_var]][['Prior_RWD']]
 ```
 
@@ -2008,7 +2095,7 @@ The linear model used to predict the effect of probability and prior reward is:
 
 $$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
 
-```{r, echo = FALSE, warning = FALSE}
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
 
 kable(pvalue_table_func(filt_data,
                         plot_var = chunk_var,
@@ -2016,7 +2103,11 @@ kable(pvalue_table_func(filt_data,
                         Prior_RWD = 'Prior_RWD'),
       caption = 'Peak Velocity P-Values for effect of Probability')
 
-plots[[chunk_var]][['Prior_RWD']][['plot']]
+plot_grid(plots[[chunk_var]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          get_legend(plots[[chunk_var]][['Prior_RWD']][['plot']]),
+          rel_widths = c(1,1,.2),
+          ncol = 3)
 
 ```
 
@@ -2116,11 +2207,13 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
 
 ```
 
-We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:totdurationtukeytable)).
+We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:totdurationttestposttab)).
 
-```{r totdurationtukeytable, echo = FALSE, warning = FALSE, message = FALSE}
+```{r totdurationttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
-kable(tukey_test_table(cur_plot$tukey_test),caption = paste('Tukey HSD test for ',chunk_var_lab,sep=''))
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab)
 
 ```
 
@@ -2186,6 +2279,14 @@ plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
                                                  title_lab = 'ABS',
                                                  Prior_RWD = 'Prior_RWD')
 
+plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',chunk_var,sep=''),
+                                                 var_lab = paste('Delta ',chunk_var_lab,' (s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
 cur_plot <- plots[[chunk_var]][['Prior_RWD']]
 ```
 
@@ -2195,7 +2296,7 @@ The linear model used to predict the effect of probability and prior reward is:
 
 $$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
 
-```{r, echo = FALSE, warning = FALSE}
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
 
 kable(pvalue_table_func(filt_data,
                         plot_var = chunk_var,
@@ -2203,7 +2304,11 @@ kable(pvalue_table_func(filt_data,
                         Prior_RWD = 'Prior_RWD'),
       caption = 'Peak Velocity P-Values for effect of Probability')
 
-plots[[chunk_var]][['Prior_RWD']][['plot']]
+plot_grid(plots[[chunk_var]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          get_legend(plots[[chunk_var]][['Prior_RWD']][['plot']]),
+          rel_widths = c(1,1,.2),
+          ncol = 3)
 
 ```
 
@@ -2303,11 +2408,13 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
 
 ```
 
-We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:vigortukeytable)).
+We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:vigorttestposttab)).
 
-```{r vigortukeytable, echo = FALSE, warning = FALSE, message = FALSE}
+```{r vigorttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
-kable(tukey_test_table(cur_plot$tukey_test),caption = paste('Tukey HSD test for ',chunk_var_lab,sep=''))
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab)
 
 ```
 
@@ -2373,6 +2480,14 @@ plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
                                                  title_lab = 'ABS',
                                                  Prior_RWD = 'Prior_RWD')
 
+plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',chunk_var,sep=''),
+                                                 var_lab = paste('Delta ',chunk_var_lab,' (1/s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
 cur_plot <- plots[[chunk_var]][['Prior_RWD']]
 ```
 
@@ -2382,7 +2497,7 @@ The linear model used to predict the effect of probability and prior reward is:
 
 $$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
 
-```{r, echo = FALSE, warning = FALSE}
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
 
 kable(pvalue_table_func(filt_data,
                         plot_var = chunk_var,
@@ -2390,7 +2505,11 @@ kable(pvalue_table_func(filt_data,
                         Prior_RWD = 'Prior_RWD'),
       caption = 'Peak Velocity P-Values for effect of Probability')
 
-plots[[chunk_var]][['Prior_RWD']][['plot']]
+plot_grid(plots[[chunk_var]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          get_legend(plots[[chunk_var]][['Prior_RWD']][['plot']]),
+          rel_widths = c(1,1,.2),
+          ncol = 3)
 
 ```
 
