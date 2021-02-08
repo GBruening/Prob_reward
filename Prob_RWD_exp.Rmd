@@ -29,6 +29,11 @@ library(boot)
 library(viridis)
 library(english)
 
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
 #====================== Load Fonts ================
 # font_import()
 loadfonts(device='win')
@@ -1163,8 +1168,17 @@ for (k in 1:length(testable_vars)){
                                                             Prior_RWD = 'Prior_RWD', 
                                                             title_lab = 'Reward Prediction Error (RPE)')
 }
+```
 
-# Make a summary Bar chart for just effect of Probability
+# Summary Bar Charts
+## Effect of Probability
+The plot below shows the linear model p-values for just the effect of probability of reward on the metric on the x-axis.
+
+The equation below shows the linear model used:
+$$ Outcome \sim Probability + (1|Subject) $$
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 4, fig.width = 9}
+
+# Make a summary Bar chart for just effect of Probability ============================
 p_val_labs = testable_vars
 p_vals  = c()
 for (item in testable_vars){
@@ -1199,7 +1213,17 @@ for (row in 1:(nrow(p_val_df))){
   }
 }
 
-# Make a summary Bar chart for effect of Probability and prior reward
+pval_plot
+```
+
+## Prior Reward
+The plot below shows a summary of linear model p-values for when we split the metric by prior reward. This is also split into individual linear models with just trials that were prior rewarded, and trials that were not prior rewarded.
+
+The equation below shows the linear model used:
+$$ Outcome \sim Probability + PriorRWD+Probability*Prior RWD + (1|Subject) $$
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 9, fig.width = 12}
+
+# Make a summary Bar chart for effect of Probability and prior reward ============================
 p_vals_prob  = c()
 p_vals_prior = c()
 p_vals_int   = c()
@@ -1276,13 +1300,13 @@ pval_plot_prior_split <- ggplot()+
   scale_x_discrete(breaks = c(1:6), labels = testable_vars)+
   labs(x = 'Tested Variable',
        y = 'LMER P-Value',
-       fill = 'Was Previous Trial\nRewarded')+
+       fill = 'Previous Trial\nRewarded')+
   theme(axis.text.x = element_text(angle = 30, hjust = 1))+
   scale_y_continuous(expand = c(0,0))+
   geom_hline(yintercept =  0.05,
              color = 'black',
              size = 2)+
-  scale_fill_discrete(labels = c('Prior RWD','No Prior RWD'))
+  scale_fill_brewer(palette = "Dark2", labels = c('Prior RWD','No Prior RWD'))
 
 for (row in 1:(nrow(prior_split_sum_df))){
   if (prior_split_sum_df[row,'p_val']<.05){
@@ -1302,25 +1326,122 @@ for (row in 1:(nrow(prior_split_sum_df))){
   }
 }
 
-
-```
-
-# Summary Bar Charts
-
-The plot below shows the linear model p-values for just the effect of probability of reward on the metric on the x-axis.
-
-The equation below shows the linear model used:
-$$ Outcome \sim Probability + (1|Subject) $$
-```{r, echo = FALSE, warning = FALSE, fig.height = 4, fig.width = 9}
-pval_plot
-```
-
-The plot below shows a summary of linear model p-values for when we split the metric by prior reward. This is also split into individual linear models with just trials that were prior rewarded, and trials that were not prior rewarded.
-
-The equation below shows the linear model used:
-$$ Outcome \sim Probability + PriorRWD+Probability*Prior RWD + (1|Subject) $$
-```{r, echo = FALSE, warning = FALSE, fig.height = 9, fig.width = 12}
 plot_grid(pval_plot_prior,pval_plot_prior_split,
+          nrow = 2,
+          align = 'vh')
+```
+
+## Reward Prediction Error (RPE)
+The next plot shows a summary of linear model p-values the prediction of reward prediction error (RPE) when we split the metric by prior reward. This is also split into individual linear models with just trials that were prior rewarded, and trials that were not prior rewarded.
+
+The equation below shows the linear model used:
+$$ Outcome \sim RPE + PriorRWD+RPE*Prior RWD + (1|Subject) $$
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 9, fig.width = 12}
+
+# Make a summary Bar chart for effect of RPE and prior reward ============================
+p_vals_prob  = c()
+p_vals_prior = c()
+p_vals_int   = c()
+for (item in testable_vars){
+  p_vals_prob  = c(p_vals_prob, plots[[item]][['RPE']]$lm$test$pvalues[2])
+  p_vals_prior = c(p_vals_prior,plots[[item]][['RPE']]$lm$test$pvalues[3])
+  p_vals_int   = c(p_vals_int,  plots[[item]][['RPE']]$lm$test$pvalues[4])
+}
+
+RPE_sum_df = data.frame('var_num' = rep(1:6,3),
+                        'variable' = rep(testable_vars,3), 
+                        'p_val_metric' = c(rep('1',6), # RPE
+                                           rep('2',6), # Prior
+                                           rep('3',6)), # Interaction
+                        'p_val' = c(p_vals_prob,p_vals_prior,p_vals_int))
+
+pval_plot_RPE <- ggplot()+
+  geom_bar(data=RPE_sum_df,
+           aes(x = factor(var_num),
+               y = p_val,
+               fill = factor(p_val_metric)),
+           stat = 'identity',
+           position = 'dodge')+
+  scale_x_discrete(breaks = c(1:6), labels = testable_vars)+
+  labs(x = 'Tested Variable',
+       y = 'LMER P-Value',
+       fill = 'P Value\nMetric')+
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))+
+  scale_y_continuous(expand = c(0,0))+
+  geom_hline(yintercept =  0.05,
+             color = 'black',
+             size = 2)+
+  scale_fill_discrete(labels = c('RPE','Prior RWD','Interaction'))
+
+for (row in 1:(nrow(RPE_sum_df))){
+  if (RPE_sum_df[row,'p_val']<.05){
+    y_val = RPE_sum_df[row,'p_val']+0.02
+    x_pos = match(RPE_sum_df[row,'variable'],testable_vars)
+    if (RPE_sum_df[row,'p_val_metric'] == 1){
+      x_pos = x_pos - 0.3
+    } else if (RPE_sum_df[row,'p_val_metric'] == 3){
+      x_pos = x_pos + 0.3
+    }
+    
+    eval(parse(text = paste('pval_plot_RPE <- pval_plot_RPE + 
+                       geom_text(aes(x = ',x_pos,', y = ',y_val,'),
+                       label = \'*\',
+                       size = 10,
+                       color = \'black\')',sep='')))
+  }
+}
+
+
+p_vals_prior1 = c()
+p_vals_prior0 = c()
+for (item in testable_vars){
+  p_vals_prior1  = c(p_vals_prior1, plots[[item]][['RPE']]$lme_test_Prior1$test$pvalues[2])
+  p_vals_prior0  = c(p_vals_prior0, plots[[item]][['RPE']]$lme_test_Prior0$test$pvalues[2])
+}
+
+RPE_split_sum_df = data.frame('var_num' = rep(1:6,2),
+                              'variable' = rep(testable_vars,2), 
+                              'p_val_metric' = c(rep('1',6), # Was Prior Rewarded
+                                                 rep('2',6)), # No Prior Reward
+                              'p_val' = c(p_vals_prior1,p_vals_prior0))
+
+pval_plot_RPE_split <- ggplot()+
+  geom_bar(data=RPE_split_sum_df,
+           aes(x = factor(var_num),
+               y = p_val,
+               fill = factor(p_val_metric)),
+           stat = 'identity',
+           position = 'dodge')+
+  scale_x_discrete(breaks = c(1:6), labels = testable_vars)+
+  labs(x = 'Tested Variable',
+       y = 'RPE LMER P-Value',
+       fill = 'Previous Trial\nRewarded')+
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))+
+  scale_y_continuous(expand = c(0,0))+
+  geom_hline(yintercept =  0.05,
+             color = 'black',
+             size = 2)+
+  scale_fill_brewer(palette = "Dark2", labels = c('Prior RWD','No Prior RWD'))
+
+for (row in 1:(nrow(RPE_split_sum_df))){
+  if (RPE_split_sum_df[row,'p_val']<.05){
+    y_val = RPE_split_sum_df[row,'p_val']+0.02
+    x_pos = match(RPE_split_sum_df[row,'variable'],testable_vars)
+    if (prior_sum_df[row,'p_val_metric'] == 1){
+      x_pos = x_pos - 0.2
+    } else if (RPE_split_sum_df[row,'p_val_metric'] == 3){
+      x_pos = x_pos + 0.2
+    }
+    
+    eval(parse(text = paste('pval_plot_RPE_split <- pval_plot_RPE_split + 
+                       geom_text(aes(x = ',x_pos,', y = ',y_val,'),
+                       label = \'*\',
+                       size = 10,
+                       color = \'black\')',sep='')))
+  }
+}
+
+plot_grid(pval_plot_RPE,pval_plot_RPE_split,
           nrow = 2,
           align = 'vh')
 ```
