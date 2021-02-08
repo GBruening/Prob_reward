@@ -123,7 +123,7 @@ dan_names = c('Subject',
               'Trial_in_Block',
               'Target_num',
               'NRWD_Run',
-              'DiffCur_Prob')
+              'RPE')
 
 gary_names = c('subj',
                'trial',
@@ -242,12 +242,6 @@ add_norm_diff_func <- function(data, item){
     
     data[data$Subject == Subject_num, item_norm] <- data[data$Subject == Subject_num, item]/mean_0
     data[data$Subject == Subject_num, item_diff] <- data[data$Subject == Subject_num, item]-mean_0
-    # for (tar in unique(data$Target)){
-    #   mean_0 = mean(data[data$r_prob==0 & data$Subject == Subject_num & data$Target == tar,item])
-    #   
-    #   data[data$Subject == Subject_num & data$Target == tar,item_norm] <- data[data$Subject == Subject_num & data$Target == tar,item]/mean_0
-    #   data[data$Subject == Subject_num & data$Target == tar,item_diff] <- data[data$Subject == Subject_num & data$Target == tar,item]-mean_0
-    # }
   }
   return(data)
 }
@@ -285,6 +279,16 @@ non_famil_data[non_famil_data$DiffPrior_Prob == -0.67, 'DiffPrior_Probability'] 
 non_famil_data[non_famil_data$DiffPrior_Prob == -0.34, 'DiffPrior_Probability'] = non_famil_data[non_famil_data$DiffPrior_Prob == -0.34, 'DiffPrior_Probability']+0.01
 non_famil_data[non_famil_data$DiffPrior_Prob == 0.67, 'DiffPrior_Probability'] = non_famil_data[non_famil_data$DiffPrior_Prob == 0.67, 'DiffPrior_Probability']-0.01
 non_famil_data[non_famil_data$DiffPrior_Prob == 0.34, 'DiffPrior_Probability'] = non_famil_data[non_famil_data$DiffPrior_Prob == 0.34, 'DiffPrior_Probability']-0.01
+
+
+prior_RPE = c()
+for (k in 1:length(non_famil_data$Subject)){
+  if (non_famil_data[k,'Trial_in_Block'] == 1){
+    non_famil_data[k,'prior_RPE'] = 0
+  } else {
+    non_famil_data[k,'prior_RPE'] = round(as.numeric(non_famil_data[k-1,'RPE']),2)
+  }
+}
 
 add_n_back <- function(data,n_back){
   data[1,paste(as.english(n_back),'_back_rate',sep='')] = 0
@@ -330,21 +334,6 @@ for (n_back in c(1)){#},3,5,10)){
 non_famil_data$one_back_rate <- non_famil_data$one_back_rate*2
 non_famil_data$Prior_RWD <- non_famil_data$one_back_rate
 
-# 'RWD_Run', #
-# 'NRWD_Run', #
-# 'Prior_Target', #
-# 'Prior_Prob', #
-# 'Ave_2_RWD', # Number of rewards not average
-# 'Ave_3_RWD', # Change to num 2 reward
-# 'Ave_4_RWD', #
-# 'Ave_5_RWD', #
-# 'Ave_10_RWD', #
-# 'Ave_2_Prob', # Average of 
-# 'Ave_3_Prob', #
-# 'Ave_4_Prob', #
-# 'Ave_5_Prob', #
-# 'Ave_10_Prob', #
-
 #====================== Plotting Function ================
 Prob_plotting <- function(data,
                           prob_method = 'Probability',
@@ -359,17 +348,6 @@ Prob_plotting <- function(data,
   
   plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',prob_method,plot_var)]
   colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability','probability_metric', 'plot_var')
-  
-  if (plot_type == 'RPE'){
-    
-    plot_var = paste('DiffPrior_',plot_var,sep='')
-    
-    plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability','DiffCur_Prob',plot_var)]
-    colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability','DiffCur_Prob', 'plot_var')
-    
-    
-    
-  }
   
   if (Prior_RWD == 'Prior_RWD'){
     
@@ -684,24 +662,6 @@ trial_plotting <- function(data,
   ret_list = list('plot' = g, 'lm' = lm, 'trial_str' = trial_str)
   
 }
-
-
-# table_func <- function(data, variable){
-#   eval(parse(text = paste('data$table_var = data$',variable,sep='')))
-#   tab = matrix(,nrow=4,ncol=7)
-#   for (s in c(1:7)){
-#     m_count = 0
-#     for (mass in c(2.44,4.830,7.13,11.69)){
-#       m_count = m_count + 1
-#       avg = round(mean(filter(data,speed == s, effmass == mass)$table_var),4)
-#       se = round(sd(filter(data,speed == s, effmass == mass)$table_var)/sqrt(length(filter(data,speed == s, effmass == mass)$table_var)),4)
-#       tab[m_count,s] = paste(avg,"±",se,sep=' ')
-#     }
-#   }
-#   colnames(tab) = c('Speed = 1','Speed = 2','Speed = 3','Speed = 4','Speed = 5','Speed = 6','Speed = 7')
-#   rownames(tab) = c('2.73 kg','4.83 kg','7.13 kg','11.69 kg')
-#   return(tab)
-# }
 
 pvalue_table_func <- function(data, plot_var, prob_metric, Prior_RWD, targets = 'all'){
   
@@ -1122,62 +1082,89 @@ priordiffprob_str_gen <- function(lm_prob_prior, lm_prior1, lm_prior0, variable,
   
   return(paste(str_lm,'\n',str_lm_split,sep='\n'))
 }
+
+priorRPE_str_gen <- function(lm_pval_prob, lm_pval_prior, lm_pval_int, lme_pval_Prior0, lme_pval_Prior1, variable){
+  if (lm_pval_prob<0.05){
+    yesno_prob = 'WAS'
+  } else {
+    yesno_prob = 'WAS NOT'
+  }
+  if (lm_pval_prior<0.05){
+    yesno_prior = 'WAS'
+  } else {
+    yesno_prior = 'WAS NOT'
+  }
+  if (lm_pval_int<0.05){
+    yesno_int = 'DID'
+  } else {
+    yesno_int = 'DID NOT'
+  }
+  
+  lm_pval_prob = formatC(lm_pval_prob,format='e',digits =3)
+  lm_pval_prior = formatC(lm_pval_prior,format='e',digits =3)
+  lm_pval_int = formatC(lm_pval_int,format='e',digits =3)
+  str_lm = paste('In an interacation LMER of RPE and prior reward with subject as a random intercept effect, ',variable,' ',yesno_prob,' affected by RPE (p = ',lm_pval_prob,') and ',yesno_prior,' affected by prior reward (p = ',lm_pval_prior,'). An interaction of the two factors ',yesno_int,' affect ',variable,' (p = ',lm_pval_int,')',sep='')
+  
+  if (lme_pval_Prior0<0.05){
+    yesno_prior0 = 'finding a significant slope'
+  } else {
+    yesno_prior0 = 'finding NO significant slope'
+  }
+  lme_pval_Prior0 = formatC(lme_pval_Prior0,format='e',digits =3)
+  if (lme_pval_Prior1<0.05){
+    yesno_prior1 = 'finding a significant slope'
+  } else {
+    yesno_prior1 = 'finding NO significant slope'
+  }
+  lme_pval_Prior1 = formatC(lme_pval_Prior1,format='e',digits =3)
+  lme_pval_Prior0 = formatC(lme_pval_Prior0,format='e',digits =3)
+  str_lm_split = paste('Dividing the data set into two groups (trials following reward and trials not following reward) resulted in ',yesno_prior1,' of RPE (p = ',lme_pval_Prior1,') in trials that follow reward, but ',yesno_prior0,' (p = ',lme_pval_Prior0,') in trials that do not follow reward.',sep='')
+  
+  return(paste(str_lm,'\n',str_lm_split,sep='\n'))
+}
 ```
 
 
-```{r, echo = FALSE, warning = FALSE}
-testable_vars = c('PeakV','RT','Max_Ex','Duration','TotalDur','Vigor')
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+testable_vars        = c('PeakV',
+                         'RT',
+                         'Max_Ex',
+                         'Duration',
+                         'TotalDur',
+                         'Vigor')
+testable_vars_labels = c('Peak Velocity (m/s)',
+                         'Reaction Time (s)',
+                         'Maximum Excursion (m)',
+                         'Movement Duration (s)',
+                         'Total Duration (s)',
+                         'Vigor (1/s)')
+
+for (k in 1:length(testable_vars)){
+  plots[[testable_vars[k]]][['abs']] <- Prob_plotting(data= filt_data,
+                                                      prob_method = 'Probability',
+                                                      plot_var = testable_vars[k],
+                                                      var_lab = testable_vars_labels[k],
+                                                      plot_type = 'nv',
+                                                      title_lab = 'ABS',
+                                                      Prior_RWD = '0')
+  
+  plots[[testable_vars[k]]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                            prob_method = 'Probability',
+                                                            plot_var = testable_vars[k],
+                                                            var_lab = testable_vars_labels[k],
+                                                            plot_type = 'nv',
+                                                            title_lab = 'ABS',
+                                                            Prior_RWD = 'Prior_RWD')
+  
+  plots[[testable_vars[k]]][['RPE']] <- Prob_plotting(filt_data,prob_method = 'prior_RPE',
+                                                            plot_var = paste('DiffPrior_',testable_vars[k],sep=''),
+                                                            var_lab = paste('Diff Prior ', testable_vars_labels[k], sep = ''),
+                                                            plot_type = 'nv',
+                                                            Prior_RWD = 'Prior_RWD', 
+                                                            title_lab = 'Reward Prediction Error (RPE)')
+}
 
 # Make a summary Bar chart for just effect of Probability
-plots[['PeakV']][['abs']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = 'PeakV',
-                                             var_lab = 'Peak Velocity (m/s)',
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = '0')
-
-plots[['RT']][['abs']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = 'RT',
-                                             var_lab = 'Reaction Time (s)',
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = '0')
-
-plots[['Max_Ex']][['abs']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = 'Max_Ex',
-                                             var_lab = 'Maximum Excursion (m)',
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = '0')
-
-plots[['Duration']][['abs']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = 'Duration',
-                                             var_lab = 'Movement Duration (s)',
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = '0')
-
-plots[['TotalDur']][['abs']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = 'TotalDur',
-                                             var_lab = 'Total Duration (s)',
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = '0')
-
-
-plots[['Vigor']][['abs']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = 'Vigor',
-                                             var_lab = 'Vigor',
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = '0')
-
 p_val_labs = testable_vars
 p_vals  = c()
 for (item in testable_vars){
@@ -1213,55 +1200,6 @@ for (row in 1:(nrow(p_val_df))){
 }
 
 # Make a summary Bar chart for effect of Probability and prior reward
-plots[['PeakV']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = 'PeakV',
-                                             var_lab = 'Peak Velocity (m/s)',
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = 'Prior_RWD')
-
-plots[['RT']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = 'RT',
-                                             var_lab = 'Reaction Time (s)',
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = 'Prior_RWD')
-
-plots[['Max_Ex']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = 'Max_Ex',
-                                             var_lab = 'Maximum Excursion (m)',
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = 'Prior_RWD')
-
-plots[['Duration']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = 'Duration',
-                                             var_lab = 'Movement Duration (s)',
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = 'Prior_RWD')
-
-plots[['TotalDur']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = 'TotalDur',
-                                             var_lab = 'Total Duration (s)',
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = 'Prior_RWD')
-
-
-plots[['Vigor']][['Prior_RWD']] <- Prob_plotting(data= filt_data,
-                                             prob_method = 'Probability',
-                                             plot_var = 'Vigor',
-                                             var_lab = 'Vigor',
-                                             plot_type = 'nv',
-                                             title_lab = 'ABS',
-                                             Prior_RWD = 'Prior_RWD')
-
 p_vals_prob  = c()
 p_vals_prior = c()
 p_vals_int   = c()
@@ -1363,6 +1301,7 @@ for (row in 1:(nrow(prior_split_sum_df))){
                        color = \'black\')',sep='')))
   }
 }
+
 
 ```
 
@@ -1588,9 +1527,28 @@ plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
 
 ## RPE
 
-```{r, echo = FALSE, warning = FALSE}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+cur_plot <- plots[[chunk_var]][['RPE']]
+
+```
+
+The linear model used to predict the effect of RPE and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+`r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
 
 
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Peak Velocity P-Values for effect of RPE')
+
+cur_plot$plot
 
 ```
 
