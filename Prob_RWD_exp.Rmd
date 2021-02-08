@@ -1327,7 +1327,7 @@ plot_grid(pval_plot_prior,pval_plot_prior_split,
 
 # Peak Velocity
 ## Effect of Probability
-```{r, echo = FALSE, warning = FALSE}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 chunk_var = 'PeakV'
 chunk_var_lab = 'Peak Velocity'
 non_famil_data$react_time
@@ -1540,7 +1540,7 @@ $$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subje
 `r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
 
 
-```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
 
 kable(pvalue_table_func(filt_data,
                         plot_var = paste('DiffPrior_',chunk_var,sep=''),
@@ -1753,6 +1753,33 @@ plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
 
 ```
 
+## RPE
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+cur_plot <- plots[[chunk_var]][['RPE']]
+
+```
+
+The linear model used to predict the effect of RPE and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+`r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Reaction Time P-Values for effect of RPE')
+
+cur_plot$plot
+
+```
+
 # Maximum Excursion
 ## Effect of Probability
 ```{r, echo = FALSE, warning = FALSE}
@@ -1948,6 +1975,33 @@ kable(pvalue_table_func(filt_data,
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
+
+```
+
+## RPE
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+cur_plot <- plots[[chunk_var]][['RPE']]
+
+```
+
+The linear model used to predict the effect of RPE and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+`r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Maximum Excursion P-Values for effect of RPE')
+
+cur_plot$plot
 
 ```
 
@@ -2148,6 +2202,32 @@ plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
 
 ```
 
+## RPE
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+cur_plot <- plots[[chunk_var]][['RPE']]
+
+```
+
+The linear model used to predict the effect of RPE and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+`r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Movement Duration P-Values for effect of RPE')
+
+cur_plot$plot
+
+```
 
 # Total Duration
 
@@ -2350,6 +2430,33 @@ plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
 
 ```
 
+## RPE
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+cur_plot <- plots[[chunk_var]][['RPE']]
+
+```
+
+The linear model used to predict the effect of RPE and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+`r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Total Duration P-Values for effect of RPE')
+
+cur_plot$plot
+
+```
+
 # Vigor
 
 Vigor we define as (1/( Reaction Time + Movement Time)).
@@ -2548,5 +2655,32 @@ kable(pvalue_table_func(filt_data,
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
+
+```
+
+## RPE
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+cur_plot <- plots[[chunk_var]][['RPE']]
+
+```
+
+The linear model used to predict the effect of RPE and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+`r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Vigor P-Values for effect of RPE')
+
+cur_plot$plot
 
 ```
