@@ -1167,6 +1167,7 @@ for (k in 1:length(testable_vars)){
                                                             plot_type = 'nv',
                                                             Prior_RWD = 'Prior_RWD', 
                                                             title_lab = 'Reward Prediction Error (RPE)')
+  plots[[testable_vars[k]]][['RPE']][['plot']] <- plots[[testable_vars[k]]][['RPE']][['plot']]+labs(x = 'Reward Prediction Error on previous trial (RPE)')
 }
 ```
 
