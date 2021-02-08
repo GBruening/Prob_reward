@@ -360,6 +360,17 @@ Prob_plotting <- function(data,
   plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',prob_method,plot_var)]
   colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability','probability_metric', 'plot_var')
   
+  if (plot_type == 'RPE'){
+    
+    plot_var = paste('DiffPrior_',plot_var,sep='')
+    
+    plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability','DiffCur_Prob',plot_var)]
+    colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability','DiffCur_Prob', 'plot_var')
+    
+    
+    
+  }
+  
   if (Prior_RWD == 'Prior_RWD'){
     
     lme_test <- cftest(lmer(plot_var ~ probability_metric*Prior_RWD + (1|Subject), data = plotting_data))
@@ -1410,7 +1421,7 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
 
 ```
 
-We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:peakvttestposttab)).
+We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:peakvttestposttab)).
 
 ```{r peakvttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
@@ -1575,6 +1586,13 @@ plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
 
 ```
 
+## RPE
+
+```{r, echo = FALSE, warning = FALSE}
+
+
+
+```
 
 # Reaction Time
 ## Effect of Probability
@@ -1609,8 +1627,11 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
           ncol=2)
 
 ```
+```{r echo = FALSE}
+# ggplot()+geom_violin(data = filter(filt_data,RT<.5 & RT > .1),aes(x=Probability,y=RT,group = Probability))+geom_line(data=aggregate(RT ~ Probability + Subject,filt_data,mean),aes(x = Probability, y = RT, group = factor(Subject)))+geom_point(data=aggregate(RT ~ Probability,filt_data,mean),aes(x=Probability,y=RT),size = 5)
+```
 
-We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:rtttestposttab)).
+We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:rtttestposttab)).
 
 ```{r rtttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
@@ -1808,7 +1829,7 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
 
 ```
 
-We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:maxexttestposttab)).
+We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:maxexttestposttab)).
 
 ```{r maxesttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
@@ -2006,7 +2027,7 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
 
 ```
 
-We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:durationttestposttab)).
+We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:durationttestposttab)).
 
 ```{r durationttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
@@ -2207,7 +2228,7 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
 
 ```
 
-We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:totdurationttestposttab)).
+We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:totdurationttestposttab)).
 
 ```{r totdurationttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
@@ -2408,7 +2429,7 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
 
 ```
 
-We also compute an TukeyHSD post hoc to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:vigorttestposttab)).
+We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:vigorttestposttab)).
 
 ```{r vigorttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
