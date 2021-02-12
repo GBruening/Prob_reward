@@ -1828,9 +1828,9 @@ plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['
 
 ```
 
-We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:vigorttestposttab)).
+We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:returnpeakvposttab)).
 
-```{r vigorttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
+```{r returnpeakvposttab, echo = FALSE, warning = FALSE, message = FALSE}
 
 ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
@@ -1886,5 +1886,1142 @@ kable(pvalue_table_func(filt_data,
       caption = 'Vigor P-Values for effect of RPE')
 
 cur_plot$plot 
+
+```
+
+# Reaction Time
+## Effect of Probability
+```{r, echo = FALSE, warning = FALSE}
+chunk_var = 'RT'
+chunk_var_lab = 'Reaction Time'
+
+plots[[chunk_var]][['Delta']] <- Prob_plotting(data= filt_data,
+                                               prob_method = 'Probability',
+                                               plot_var = paste('Delta',chunk_var,sep=''),
+                                               var_lab = paste(chunk_var_lab,' DELTA (s)',sep=''),
+                                               plot_type = 'nv',
+                                               title_lab = 'DELTA',
+                                               Prior_RWD = '0')
+
+cur_plot = plots[[chunk_var]][['abs']]
+```
+
+`r prob_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$coef[2],chunk_var_lab)`
+
+The equation below shows the linear model used:
+$$ Outcome \sim Probability + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
+kable(pvalue_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'no'),
+      caption = paste(chunk_var_lab,' P-Values for effect of Probability',sep=''))
+
+plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['plot']],
+          ncol=2)
+
+```
+```{r echo = FALSE}
+# ggplot()+geom_violin(data = filter(filt_data,RT<.5 & RT > .1),aes(x=Probability,y=RT,group = Probability))+geom_line(data=aggregate(RT ~ Probability + Subject,filt_data,mean),aes(x = Probability, y = RT, group = factor(Subject)))+geom_point(data=aggregate(RT ~ Probability,filt_data,mean),aes(x=Probability,y=RT),size = 5)
+```
+
+We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:rtttestposttab)).
+
+```{r rtttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab)
+
+```
+
+
+#### Comparison of 0% and 100% Reward
+
+`r t14_str_gen(cur_plot$t_test$p.value,cur_plot$ano14[['Pr(>F)']][1],chunk_var_lab)`
+
+## Effect of Trial
+
+```{r, echo = FALSE, warning = FALSE}
+Q = quantile(filt_data[[chunk_var]], probs=c(.25, .75), na.rm = FALSE)
+iqr = IQR(filt_data[[chunk_var]])
+high = Q[2]+1.5*iqr
+low  = Q[1]-1.5*iqr
+
+plots[[chunk_var]][['Trial']] = trial_plotting(filter(filt_data,RT < high & RT > low),chunk_var,paste(chunk_var_lab,' (s)',sep=''),chunk_var_lab)
+
+```
+
+`r plots[[chunk_var]][['Trial']][['trial_str']]`
+
+The linear model used to predict effect of trial is shown below:
+$$ Outcome \sim B*Trial + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[chunk_var]][['Trial']][['plot']]
+
+```
+
+## Reaction Time Following Reward
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
+                                                  prob_method = 'Probability',
+                                                  plot_var = chunk_var,
+                                                  var_lab = paste(chunk_var_lab,' (s)',sep=''),
+                                                  plot_type = 'bar',
+                                                  title_lab = 'ABS',
+                                                  Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[chunk_var]][['Prior_RWD_bar']]
+```
+
+`r priorbar_str_gen(cur_plot$t_test$p.value,cur_plot$ano14[['Pr(>F)']][1],chunk_var_lab)`
+
+```{r, echo = FALSE, warning = FALSE}
+kable(ttest_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var_lab,' P-Values for effect of Probability',sep=''))
+
+plots[[chunk_var]][['Prior_RWD_bar']][['plot']]
+
+```
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = chunk_var,
+                                                 var_lab = paste(chunk_var_lab,' (s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
+plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',chunk_var,sep=''),
+                                                 var_lab = paste('Delta ',chunk_var_lab,' (s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[chunk_var]][['Prior_RWD']]
+```
+
+`r prior_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+The linear model used to predict the effect of probability and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Peak Velocity P-Values for effect of Probability')
+
+plot_grid(plots[[chunk_var]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          get_legend(plots[[chunk_var]][['Prior_RWD']][['plot']]),
+          rel_widths = c(1,1,.2),
+          ncol = 3)
+
+```
+
+### Change in Peak Velocity from previous trial due to Reward
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
+                                                     prob_method = 'Probability',
+                                                     plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                                                     var_lab = paste(chunk_var_lab,' Diff Prior (s)',sep=''),
+                                                     plot_type = 'bar',
+                                                     title_lab = 'Diff',
+                                                     Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']]
+
+kable(ttest_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var,' Diff Prior P-Values for effect of Probability',sep=''))
+
+```
+
+
+`r priordiff_ttest_str_gen(cur_plot$t_test$p.value,cur_plot$t_test1$p.value,cur_plot$t_test0$p.value,chunk_var_lab)`
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']][['plot']]
+
+```
+
+
+### Interaction of Prior Reward and Change in Probability of Reward
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']] <- Prob_plotting(data = filter(filt_data,Trial_in_Block>1),
+                                                     prob_method = 'DiffPrior_Probability',
+                                                     plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                                                     var_lab = paste(chunk_var_lab,' Diff Prior (s)',sep=''),
+                                                     plot_type = 'nv',
+                                                     title_lab = 'Diff',
+                                                     Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']]
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'DiffPrior_Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var,' Diff Prior P-Values for effect of Diff Probability',sep=''))
+
+```
+`r priordiffprob_str_gen(cur_plot$lm, cur_plot$lme_test_Prior1, cur_plot$lme_test_Prior0, chunk_var_lab, 'probability difference')`
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
+
+```
+
+## RPE
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+cur_plot <- plots[[chunk_var]][['RPE']]
+
+```
+
+The linear model used to predict the effect of RPE and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+`r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Reaction Time P-Values for effect of RPE')
+
+cur_plot$plot
+
+```
+
+# Maximum Excursion
+## Effect of Probability
+```{r, echo = FALSE, warning = FALSE}
+chunk_var = 'Max_Ex'
+chunk_var_lab = 'Maximum Excursion'
+
+plots[[chunk_var]][['Delta']] <- Prob_plotting(data= filt_data,
+                                               prob_method = 'Probability',
+                                               plot_var = paste('Delta',chunk_var,sep=''),
+                                               var_lab = paste(chunk_var_lab,' DELTA (m)',sep=''),
+                                               plot_type = 'nv',
+                                               title_lab = 'DELTA',
+                                               Prior_RWD = '0')
+
+cur_plot = plots[[chunk_var]][['abs']]
+```
+
+`r prob_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$coef[2],chunk_var_lab)`
+
+The equation below shows the linear model used:
+$$ Outcome \sim Probability + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
+kable(pvalue_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'no'),
+      caption = paste(chunk_var_lab,' P-Values for effect of Probability',sep=''))
+
+plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['plot']],
+          ncol=2)
+
+```
+
+We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:maxexttestposttab)).
+
+```{r maxesttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab)
+
+```
+
+
+#### Comparison of 0% and 100% Reward
+
+`r t14_str_gen(cur_plot$t_test$p.value,cur_plot$ano14[['Pr(>F)']][1],chunk_var_lab)`
+
+## Effect of Trial
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Trial']] = trial_plotting(filt_data,chunk_var,paste(chunk_var_lab,' (m)',sep=''),chunk_var_lab)
+
+```
+
+`r plots[[chunk_var]][['Trial']][['trial_str']]`
+
+The linear model used to predict effect of trial is shown below:
+$$ Outcome \sim B*Trial + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[chunk_var]][['Trial']][['plot']]
+
+```
+
+## Maximum Excursion Following Reward
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
+                                                  prob_method = 'Probability',
+                                                  plot_var = chunk_var,
+                                                  var_lab = paste(chunk_var_lab,' (m)',sep=''),
+                                                  plot_type = 'bar',
+                                                  title_lab = 'ABS',
+                                                  Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[chunk_var]][['Prior_RWD_bar']]
+```
+
+`r priorbar_str_gen(cur_plot$t_test$p.value,cur_plot$ano14[['Pr(>F)']][1],chunk_var_lab)`
+
+```{r, echo = FALSE, warning = FALSE}
+kable(ttest_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var_lab,' P-Values for effect of Probability',sep=''))
+
+plots[[chunk_var]][['Prior_RWD_bar']][['plot']]
+
+```
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = chunk_var,
+                                                 var_lab = paste(chunk_var_lab,' (m)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
+plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',chunk_var,sep=''),
+                                                 var_lab = paste('Delta ',chunk_var_lab,' (m)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[chunk_var]][['Prior_RWD']]
+```
+
+`r prior_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+The linear model used to predict the effect of probability and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Peak Velocity P-Values for effect of Probability')
+
+plot_grid(plots[[chunk_var]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          get_legend(plots[[chunk_var]][['Prior_RWD']][['plot']]),
+          rel_widths = c(1,1,.2),
+          ncol = 3)
+
+```
+
+### Change in Peak Velocity from previous trial due to Reward
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
+                                                     prob_method = 'Probability',
+                                                     plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                                                     var_lab = paste(chunk_var_lab,' Diff Prior (m)',sep=''),
+                                                     plot_type = 'bar',
+                                                     title_lab = 'Diff',
+                                                     Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']]
+
+kable(ttest_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var,' Diff Prior P-Values for effect of Probability',sep=''))
+
+```
+
+
+`r priordiff_ttest_str_gen(cur_plot$t_test$p.value,cur_plot$t_test1$p.value,cur_plot$t_test0$p.value,chunk_var_lab)`
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']][['plot']]
+
+```
+
+
+### Interaction of Prior Reward and Change in Probability of Reward
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']] <- Prob_plotting(data = filter(filt_data,Trial_in_Block>1),
+                                                     prob_method = 'DiffPrior_Probability',
+                                                     plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                                                     var_lab = paste(chunk_var_lab,' Diff Prior (m)',sep=''),
+                                                     plot_type = 'nv',
+                                                     title_lab = 'Diff',
+                                                     Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']]
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'DiffPrior_Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var,' Diff Prior P-Values for effect of Diff Probability',sep=''))
+
+```
+`r priordiffprob_str_gen(cur_plot$lm, cur_plot$lme_test_Prior1, cur_plot$lme_test_Prior0, chunk_var_lab, 'probability difference')`
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
+
+```
+
+## RPE
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+cur_plot <- plots[[chunk_var]][['RPE']]
+
+```
+
+The linear model used to predict the effect of RPE and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+`r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Maximum Excursion P-Values for effect of RPE')
+
+cur_plot$plot
+
+```
+
+# Movement Time
+## Effect of Probability
+```{r, echo = FALSE, warning = FALSE}
+chunk_var = 'Duration'
+chunk_var_lab = 'Movement Duration'
+
+plots[[chunk_var]][['Delta']] <- Prob_plotting(data= filt_data,
+                                               prob_method = 'Probability',
+                                               plot_var = paste('Delta',chunk_var,sep=''),
+                                               var_lab = paste(chunk_var_lab,' DELTA (s)',sep=''),
+                                               plot_type = 'nv',
+                                               title_lab = 'DELTA',
+                                               Prior_RWD = '0')
+
+cur_plot = plots[[chunk_var]][['abs']]
+```
+
+`r prob_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$coef[2],chunk_var_lab)`
+
+The equation below shows the linear model used:
+$$ Outcome \sim Probability + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
+kable(pvalue_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'no'),
+      caption = paste(chunk_var_lab,' P-Values for effect of Probability',sep=''))
+
+plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['plot']],
+          ncol=2)
+
+```
+
+We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:durationttestposttab)).
+
+```{r durationttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab)
+
+```
+
+
+#### Comparison of 0% and 100% Reward
+
+`r t14_str_gen(cur_plot$t_test$p.value,cur_plot$ano14[['Pr(>F)']][1],chunk_var_lab)`
+
+## Effect of Trial
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Trial']] = trial_plotting(filt_data,chunk_var,paste(chunk_var_lab,' (s)',sep=''),chunk_var_lab)
+
+```
+
+`r plots[[chunk_var]][['Trial']][['trial_str']]`
+
+The linear model used to predict effect of trial is shown below:
+$$ Outcome \sim B*Trial + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[chunk_var]][['Trial']][['plot']]
+
+```
+
+## Movement Duration Following Reward
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
+                                                  prob_method = 'Probability',
+                                                  plot_var = chunk_var,
+                                                  var_lab = paste(chunk_var_lab,' (s)',sep=''),
+                                                  plot_type = 'bar',
+                                                  title_lab = 'ABS',
+                                                  Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[chunk_var]][['Prior_RWD_bar']]
+```
+
+`r priorbar_str_gen(cur_plot$t_test$p.value,cur_plot$ano14[['Pr(>F)']][1],chunk_var_lab)`
+
+```{r, echo = FALSE, warning = FALSE}
+kable(ttest_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var_lab,' P-Values for effect of Probability',sep=''))
+
+plots[[chunk_var]][['Prior_RWD_bar']][['plot']]
+
+```
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = chunk_var,
+                                                 var_lab = paste(chunk_var_lab,' (s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
+plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',chunk_var,sep=''),
+                                                 var_lab = paste('Delta ',chunk_var_lab,' (s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[chunk_var]][['Prior_RWD']]
+```
+
+`r prior_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+The linear model used to predict the effect of probability and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Peak Velocity P-Values for effect of Probability')
+
+plot_grid(plots[[chunk_var]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          get_legend(plots[[chunk_var]][['Prior_RWD']][['plot']]),
+          rel_widths = c(1,1,.2),
+          ncol = 3)
+
+```
+
+### Change in Peak Velocity from previous trial due to Reward
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
+                                                     prob_method = 'Probability',
+                                                     plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                                                     var_lab = paste(chunk_var_lab,' Diff Prior (s)',sep=''),
+                                                     plot_type = 'bar',
+                                                     title_lab = 'Diff',
+                                                     Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']]
+
+kable(ttest_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var,' Diff Prior P-Values for effect of Probability',sep=''))
+
+```
+
+`r priordiff_ttest_str_gen(cur_plot$t_test$p.value,cur_plot$t_test1$p.value,cur_plot$t_test0$p.value,chunk_var_lab)`
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']][['plot']]
+
+```
+
+
+### Interaction of Prior Reward and Change in Probability of Reward
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']] <- Prob_plotting(data = filter(filt_data,Trial_in_Block>1),
+                                                     prob_method = 'DiffPrior_Probability',
+                                                     plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                                                     var_lab = paste(chunk_var_lab,' Diff Prior (s)',sep=''),
+                                                     plot_type = 'nv',
+                                                     title_lab = 'Diff',
+                                                     Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']]
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'DiffPrior_Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var,' Diff Prior P-Values for effect of Diff Probability',sep=''))
+
+```
+`r priordiffprob_str_gen(cur_plot$lm, cur_plot$lme_test_Prior1, cur_plot$lme_test_Prior0, chunk_var_lab, 'probability difference')`
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
+
+```
+
+## RPE
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+cur_plot <- plots[[chunk_var]][['RPE']]
+
+```
+
+The linear model used to predict the effect of RPE and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+`r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Movement Duration P-Values for effect of RPE')
+
+cur_plot$plot
+
+```
+
+# Total Duration
+
+Total time we define as reaction time plus movement time.
+
+## Effect of Probability
+```{r, echo = FALSE, warning = FALSE}
+chunk_var = 'TotalDur'
+chunk_var_lab = 'Total Duration'
+
+plots[[chunk_var]][['Delta']] <- Prob_plotting(data= filt_data,
+                                               prob_method = 'Probability',
+                                               plot_var = paste('Delta',chunk_var,sep=''),
+                                               var_lab = paste(chunk_var_lab,' DELTA (s)',sep=''),
+                                               plot_type = 'nv',
+                                               title_lab = 'DELTA',
+                                               Prior_RWD = '0')
+
+cur_plot = plots[[chunk_var]][['abs']]
+```
+
+`r prob_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$coef[2],chunk_var_lab)`
+
+The equation below shows the linear model used:
+$$ Outcome \sim Probability + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
+kable(pvalue_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'no'),
+      caption = paste(chunk_var_lab,' P-Values for effect of Probability',sep=''))
+
+plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['plot']],
+          ncol=2)
+
+```
+
+We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:totdurationttestposttab)).
+
+```{r totdurationttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab)
+
+```
+
+
+#### Comparison of 0% and 100% Reward
+
+`r t14_str_gen(cur_plot$t_test$p.value,cur_plot$ano14[['Pr(>F)']][1],chunk_var_lab)`
+
+## Effect of Trial
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Trial']] = trial_plotting(filt_data,chunk_var,paste(chunk_var_lab,' (s)',sep=''),chunk_var_lab)
+
+```
+
+`r plots[[chunk_var]][['Trial']][['trial_str']]`
+
+The linear model used to predict effect of trial is shown below:
+$$ Outcome \sim B*Trial + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[chunk_var]][['Trial']][['plot']]
+
+```
+
+## Total Time Following Reward
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
+                                                  prob_method = 'Probability',
+                                                  plot_var = chunk_var,
+                                                  var_lab = paste(chunk_var_lab,' (s)',sep=''),
+                                                  plot_type = 'bar',
+                                                  title_lab = 'ABS',
+                                                  Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[chunk_var]][['Prior_RWD_bar']]
+```
+
+`r priorbar_str_gen(cur_plot$t_test$p.value,cur_plot$ano14[['Pr(>F)']][1],chunk_var_lab)`
+
+```{r, echo = FALSE, warning = FALSE}
+kable(ttest_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var_lab,' P-Values for effect of Probability',sep=''))
+
+plots[[chunk_var]][['Prior_RWD_bar']][['plot']]
+
+```
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = chunk_var,
+                                                 var_lab = paste(chunk_var_lab,' (s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
+plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',chunk_var,sep=''),
+                                                 var_lab = paste('Delta ',chunk_var_lab,' (s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[chunk_var]][['Prior_RWD']]
+```
+
+`r prior_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+The linear model used to predict the effect of probability and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Peak Velocity P-Values for effect of Probability')
+
+plot_grid(plots[[chunk_var]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          get_legend(plots[[chunk_var]][['Prior_RWD']][['plot']]),
+          rel_widths = c(1,1,.2),
+          ncol = 3)
+
+```
+
+### Change in Peak Velocity from previous trial due to Reward
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
+                                                     prob_method = 'Probability',
+                                                     plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                                                     var_lab = paste(chunk_var_lab,' Diff Prior (s)',sep=''),
+                                                     plot_type = 'bar',
+                                                     title_lab = 'Diff',
+                                                     Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']]
+
+kable(ttest_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var,' Diff Prior P-Values for effect of Probability',sep=''))
+
+```
+
+
+`r priordiff_ttest_str_gen(cur_plot$t_test$p.value,cur_plot$t_test1$p.value,cur_plot$t_test0$p.value,chunk_var_lab)`
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']][['plot']]
+
+```
+
+
+### Interaction of Prior Reward and Change in Probability of Reward
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']] <- Prob_plotting(data = filter(filt_data,Trial_in_Block>1),
+                                                     prob_method = 'DiffPrior_Probability',
+                                                     plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                                                     var_lab = paste(chunk_var_lab,' Diff Prior (s)',sep=''),
+                                                     plot_type = 'nv',
+                                                     title_lab = 'Diff',
+                                                     Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']]
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'DiffPrior_Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var,' Diff Prior P-Values for effect of Diff Probability',sep=''))
+
+```
+`r priordiffprob_str_gen(cur_plot$lm, cur_plot$lme_test_Prior1, cur_plot$lme_test_Prior0, chunk_var_lab, 'probability difference')`
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
+
+```
+
+## RPE
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+cur_plot <- plots[[chunk_var]][['RPE']]
+
+```
+
+The linear model used to predict the effect of RPE and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+`r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Total Duration P-Values for effect of RPE')
+
+cur_plot$plot
+
+```
+
+# Vigor
+
+Vigor we define as (1/( Reaction Time + Movement Time)).
+
+## Effect of Probability
+```{r, echo = FALSE, warning = FALSE}
+chunk_var = 'TotalDur'
+chunk_var_lab = 'Total Duration'
+
+plots[[chunk_var]][['Delta']] <- Prob_plotting(data= filt_data,
+                                               prob_method = 'Probability',
+                                               plot_var = paste('Delta',chunk_var,sep=''),
+                                               var_lab = paste(chunk_var_lab,' DELTA (1/s)',sep=''),
+                                               plot_type = 'nv',
+                                               title_lab = 'DELTA',
+                                               Prior_RWD = '0')
+
+cur_plot = plots[[chunk_var]][['abs']]
+```
+
+`r prob_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$coef[2],chunk_var_lab)`
+
+The equation below shows the linear model used:
+$$ Outcome \sim Probability + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
+kable(pvalue_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'no'),
+      caption = paste(chunk_var_lab,' P-Values for effect of Probability',sep=''))
+
+plot_grid(plots[[chunk_var]][['abs']][['plot']],plots[[chunk_var]][['Delta']][['plot']],
+          ncol=2)
+
+```
+
+We also compute an paired t-test with holm-bonferonni correction to determine if there are differences between individual conditions. The table below shows the results of the Tukey test (table \@ref(tab:vigorttestposttab)).
+
+```{r vigorttestposttab, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab)
+
+```
+
+
+#### Comparison of 0% and 100% Reward
+
+`r t14_str_gen(cur_plot$t_test$p.value,cur_plot$ano14[['Pr(>F)']][1],chunk_var_lab)`
+
+## Effect of Trial
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Trial']] = trial_plotting(filt_data,chunk_var,paste(chunk_var_lab,' (1/s)',sep=''),chunk_var_lab)
+
+```
+
+`r plots[[chunk_var]][['Trial']][['trial_str']]`
+
+The linear model used to predict effect of trial is shown below:
+$$ Outcome \sim B*Trial + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[chunk_var]][['Trial']][['plot']]
+
+```
+
+## Vigor Following Reward
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
+                                                  prob_method = 'Probability',
+                                                  plot_var = chunk_var,
+                                                  var_lab = paste(chunk_var_lab,' (1/s)',sep=''),
+                                                  plot_type = 'bar',
+                                                  title_lab = 'ABS',
+                                                  Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[chunk_var]][['Prior_RWD_bar']]
+```
+
+`r priorbar_str_gen(cur_plot$t_test$p.value,cur_plot$ano14[['Pr(>F)']][1],chunk_var_lab)`
+
+```{r, echo = FALSE, warning = FALSE}
+kable(ttest_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var_lab,' P-Values for effect of Probability',sep=''))
+
+plots[[chunk_var]][['Prior_RWD_bar']][['plot']]
+
+```
+
+```{r, echo = FALSE, warning = FALSE}
+
+plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = chunk_var,
+                                                 var_lab = paste(chunk_var_lab,' (1/s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
+plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',chunk_var,sep=''),
+                                                 var_lab = paste('Delta ',chunk_var_lab,' (1/s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'ABS',
+                                                 Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[chunk_var]][['Prior_RWD']]
+```
+
+`r prior_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+The linear model used to predict the effect of probability and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+```{r, echo = FALSE, warning = FALSE, fig.height = 5, fig.width = 10}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = chunk_var,
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Peak Velocity P-Values for effect of Probability')
+
+plot_grid(plots[[chunk_var]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+          get_legend(plots[[chunk_var]][['Prior_RWD']][['plot']]),
+          rel_widths = c(1,1,.2),
+          ncol = 3)
+
+```
+
+### Change in Peak Velocity from previous trial due to Reward
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']] <- Prob_plotting(data= filt_data,
+                                                     prob_method = 'Probability',
+                                                     plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                                                     var_lab = paste(chunk_var_lab,' Diff Prior (1/s)',sep=''),
+                                                     plot_type = 'bar',
+                                                     title_lab = 'Diff',
+                                                     Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']]
+
+kable(ttest_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var,' Diff Prior P-Values for effect of Probability',sep=''))
+
+```
+
+
+`r priordiff_ttest_str_gen(cur_plot$t_test$p.value,cur_plot$t_test1$p.value,cur_plot$t_test0$p.value,chunk_var_lab)`
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['Prior_RWD_bar']][['plot']]
+
+```
+
+
+### Interaction of Prior Reward and Change in Probability of Reward
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']] <- Prob_plotting(data = filter(filt_data,Trial_in_Block>1),
+                                                     prob_method = 'DiffPrior_Probability',
+                                                     plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                                                     var_lab = paste(chunk_var_lab,' Diff Prior (1/s)',sep=''),
+                                                     plot_type = 'nv',
+                                                     title_lab = 'Diff',
+                                                     Prior_RWD = 'Prior_RWD')
+
+cur_plot <- plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']]
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'DiffPrior_Probability',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = paste(chunk_var,' Diff Prior P-Values for effect of Diff Probability',sep=''))
+
+```
+`r priordiffprob_str_gen(cur_plot$lm, cur_plot$lme_test_Prior1, cur_plot$lme_test_Prior0, chunk_var_lab, 'probability difference')`
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+plots[[paste(chunk_var,'_Diff',sep='')]][['DiffPrior_RWD']][['plot']]
+
+```
+
+## RPE
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+cur_plot <- plots[[chunk_var]][['RPE']]
+
+```
+
+The linear model used to predict the effect of RPE and prior reward is:
+
+$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
+
+`r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
+
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'Prior_RWD'),
+      caption = 'Vigor P-Values for effect of RPE')
+
+cur_plot$plot
 
 ```
