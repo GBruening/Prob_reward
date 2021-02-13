@@ -59,6 +59,7 @@ raw_data = read.csv(paste('vigor_conf_',exp_name,'.csv',sep=''))
 
 raw_data$vigor = 1/(raw_data$react_time+raw_data$move_dur)
 raw_data$total_dur = raw_data$react_time+raw_data$move_dur
+raw_data$PeakVinout = raw_data$peak_vel - raw_data$peak_vel_moveback
 
 #====================== Filter and add Probs ================
 rm_fail_data = raw_data[raw_data$rewarded != -1,]
@@ -106,6 +107,7 @@ for (k in 1:length(non_famil_data$trial)){
 }
 non_famil_data$probs = round(probs,2)
 non_famil_data$block = blocks
+non_famil_data = filter(non_famil_data, r_prob == probs)
 
 # ==================== Renaming =================
 dan_names = c('Subject',
@@ -170,7 +172,8 @@ testable_vars_abs = c('Vigor',
                       'Error_Dist',
                       'Error_Ang',
                       'Ret_Error',
-                      'Max_Ex')
+                      'Max_Ex',
+                      'PeakVinout')
 
 testable_labels_abs = c('Vigor (???)',
                         'Total Duration (s)',
@@ -182,7 +185,8 @@ testable_labels_abs = c('Vigor (???)',
                         'Error Distance (m)',
                         'Error Angle (deg)',
                         'Return Error (m)',
-                        'Maximum Excursion (m)')
+                        'Maximum Excursion (m)',
+                        'Peak Velocity (Out - in) (m/s)')
 
 testable_vars_norm = c('NormVigor',
                        'NormTotalDur',
@@ -194,7 +198,8 @@ testable_vars_norm = c('NormVigor',
                        'NormError_Dist',
                        'NormError_Ang',
                        'NormRet_Error',
-                       'NormMax_Ex')
+                       'NormMax_Ex',
+                       'NormPeakVinout')
 
 testable_labels_norm = c('Vigor Norm (???)',
                          'Total Duration Norm (s)',
@@ -206,7 +211,8 @@ testable_labels_norm = c('Vigor Norm (???)',
                          'Error Distance Norm (m)',
                          'Error Angle Norm (deg)',
                          'Return Error Norm (m)',
-                         'Maximum Excursion Norm (m)')
+                         'Maximum Excursion Norm (m)',
+                        'Peak Velocity (Out - in) Norm (m/s)')
 
 testable_vars_diff = c('DeltaVigor',
                        'DeltaTotalDur',
@@ -218,7 +224,8 @@ testable_vars_diff = c('DeltaVigor',
                        'DeltaError_Dist',
                        'DeltaError_Ang',
                        'DeltaRet_Error',
-                       'DeltaMax_Ex')
+                       'DeltaMax_Ex',
+                       'DeltaPeakVinout')
 
 testable_labels_diff = c('Vigor Delta (???)',
                          'Total Duration Delta (s)',
@@ -230,7 +237,8 @@ testable_labels_diff = c('Vigor Delta (???)',
                          'Error Distance Delta (m)',
                          'Error Angle Delta (deg)',
                          'Return Error Delta (m)',
-                         'Maximum Excursion Delta (m)')
+                         'Maximum Excursion Delta (m)',
+                        'Peak Velocity (Out - in) Delta (m/s)')
 
 # CHECK RADIAL VELOCITY?
 #====================== Add Normalization ================
@@ -271,7 +279,8 @@ prior_trial_vars = c('Probability',
                      'Duration',
                      'TotalDur',
                      'Vigor',
-                     'ReturnPeakV')
+                     'ReturnPeakV',
+                     'PeakVinout')
 for (k in 1:length(non_famil_data$Subject)){
   for (item in prior_trial_vars){
     if (non_famil_data[k,'Trial_in_Block'] == 1){
@@ -447,6 +456,102 @@ Prob_plotting <- function(data,
         ret_list[['lme_test_Prior0']] = lme_test_Prior0
       }
       return(ret_list)
+  }
+  
+  if (prob_method == 'RPE'){
+    
+    lme_test <- cftest(lmer(plot_var ~ probability_metric + (1|Subject), data = plotting_data))
+    lme_test_t14 <- cftest(lmer(plot_var ~ probability_metric + (1|Subject), 
+                                data = rbind(filter(plotting_data,probability_metric==1),
+                                             filter(plotting_data,probability_metric==0))))
+    
+    lme_test_Prior1 <- cftest(lmer(plot_var ~ probability_metric + (1|Subject), 
+                                   data = filter(plotting_data,RWD==1)))
+    lme_test_Prior0 <- cftest(lmer(plot_var ~ probability_metric + (1|Subject), 
+                                   data = filter(plotting_data,RWD==0)))
+    
+    #============= No Facet Abs
+    a1 = aggregate(plot_var ~ probability_metric + RWD + Probability + Subject, plotting_data,mean)
+    a  = aggregate(plot_var ~ probability_metric + RWD + Probability,a1,mean)
+    b  = aggregate(plot_var ~ probability_metric + RWD + Probability,a1,sd)/sqrt(max(a1$Subject))#/sqrt(length(plotting_data[,1]))
+    c  = cbind(a,b$plot_var)
+    colnames(c) = c('probability_metric','RWD','Probability','plot_var','plot_var_se')
+    
+    g<-ggplot(data = c,
+              aes(x = probability_metric,
+                  y = plot_var,
+                  color = factor(Probability),
+                  group = factor(Probability)))+
+      geom_point(data = filter(c,RWD == 0),
+                 aes(x = probability_metric,
+                     y = plot_var,
+                     group = factor(Probability),
+                     color = factor(Probability),
+                     shape = factor(RWD)),
+                 size = 5,
+                 position = position_dodge(width = .2))+
+      geom_line(data = filter(c,RWD == 0),
+                aes(x = probability_metric,
+                    y = plot_var,
+                    group = factor(Probability),
+                    color = factor(Probability)),
+                size = 1,
+                position = position_dodge(width = .2))+
+      geom_errorbar(data=filter(c,RWD == 0),
+                    aes(x = probability_metric,
+                        ymin = plot_var-plot_var_se,
+                        ymax = plot_var+plot_var_se,
+                        group = factor(Probability),
+                        color = factor(Probability)),
+                    size = 1,
+                    width = .2,
+                    position = position_dodge(width = .2))+
+      geom_point(data = filter(c,RWD == 1),
+                 aes(x = probability_metric,
+                     y = plot_var,
+                     group = factor(Probability),
+                     color = factor(Probability),
+                     shape = factor(RWD)),
+                 size = 5,
+                 position = position_dodge(width = .2))+
+      geom_line(data = filter(c,RWD == 1),
+                aes(x = probability_metric,
+                    y = plot_var,
+                    group = factor(Probability),
+                    color = factor(Probability)),
+                size = 1,
+                position = position_dodge(width = .2))+
+      geom_errorbar(data = filter(c,RWD == 1),
+                    aes(x = probability_metric,
+                        ymin = plot_var-plot_var_se,
+                        ymax = plot_var+plot_var_se,
+                        group = factor(Probability),
+                        color = factor(Probability)),
+                    size = 1,
+                    width = .2,
+                    position = position_dodge(width = .2))+
+      scale_shape_manual(values = c(16,15), labels = c('0','1'))+
+      labs(x = 'Reward Prediction Error (RPE)',
+           y = var_lab,
+           color = 'Current Target\nProbability',
+           shape = 'Prior\nReward')
+    
+    
+    ret_list <- list('lm' = lme_test,
+                     'plot' = g)
+    if (exists('lme_test_t14')){
+      ret_list[['lm14']] = lme_test_t14
+    }
+    if (exists('ano14')){
+      ret_list[['ano14']] = ano14
+    }
+    if (exists('lme_test_Prior1')){
+      ret_list[['lme_test_Prior1']] = lme_test_Prior1
+    }
+    if (exists('lme_test_Prior0')){
+      ret_list[['lme_test_Prior0']] = lme_test_Prior0
+    }
+    return(ret_list)
   }
   
   if (Prior_RWD == 'Prior_RWD'){
@@ -842,6 +947,8 @@ pvalue_table_func <- function(data, plot_var, prob_metric, Prior_RWD, targets = 
                           paste(formatC(lme_test_t14$test$coefficients[4],format="e",digits = 3),'±',formatC(lme_test_t14$test$sigma[4],format="e",digits = 3))))
     rownames(lm14_table) <- c('Intercept','Prob Metric','Prior RWD','Interaction')
     colnames(lm14_table) <- c('P-Value','Slope')
+    
+    
     if (targets == 'all'){
       return(lm_table)
     } else {
@@ -1223,6 +1330,22 @@ priorRPE_str_gen <- function(lm_pval_prob, lm_pval_prior, lm_pval_int, lme_pval_
   
   return(paste(str_lm,'\n',str_lm_split,sep='\n'))
 }
+
+
+RPE_str_gen <- function(lm_pval_prob, variable){
+  if (lm_pval_prob<0.05){
+    yesno_prob = 'WAS'
+  } else {
+    yesno_prob = 'WAS NOT'
+  }
+  
+  lm_pval_prob = formatC(lm_pval_prob,format='e',digits =3)
+  str_lm = paste('In an LMER of RPE with subject as a random intercept effect, ',variable,' ',yesno_prob,' affected by RPE (p = ',lm_pval_prob,').',sep='')
+  
+  
+  return(paste(str_lm,sep=''))
+}
+
 ```
 
 
@@ -1773,11 +1896,10 @@ cur_plot$plot
 ```
 
 # Return PeakV
-
 ## Effect of Probability
 ```{r, echo = FALSE, warning = FALSE}
-chunk_var = 'ReturnPeakV'
-chunk_var_lab = 'Return Peak Velocity'
+chunk_var = 'PeakVinout'
+chunk_var_lab = 'PeakV - Return Peak Velocity'
 
 
 plots[[chunk_var]][['abs']] <- Prob_plotting(data= filt_data,
@@ -1789,7 +1911,7 @@ plots[[chunk_var]][['abs']] <- Prob_plotting(data= filt_data,
                                                     Prior_RWD = '0')
 
 plots[[chunk_var]][['RPE']] <- Prob_plotting(filt_data,
-                                         prob_method = 'prior_RPE',
+                                         prob_method = 'RPE',
                                          plot_var = paste(chunk_var,sep=''),
                                          var_lab = paste(chunk_var_lab, sep = ''),
                                          plot_type = 'NULL',
@@ -1797,7 +1919,7 @@ plots[[chunk_var]][['RPE']] <- Prob_plotting(filt_data,
                                          title_lab = 'Reward Prediction Error (RPE)')
 
 plots[[chunk_var]][['RPE']][['plot']] <- plots[[chunk_var]][['RPE']][['plot']]+
-  labs(x = 'Reward Prediction Error on previous trial (RPE)')
+  labs(x = 'Reward Prediction Error on CURRENT trial (RPE)')
 
 
 plots[[chunk_var]][['Delta']] <- Prob_plotting(data= filt_data,
@@ -1870,20 +1992,18 @@ cur_plot <- plots[[chunk_var]][['RPE']]
 
 ```
 
-The linear model used to predict the effect of RPE and prior reward is:
+The linear model used to predict the effect of RPE is:
 
-$$ Outcome \sim Probability + Prior Reward + Probability*Prior Reward + (1|Subject) $$
-
-`r priorRPE_str_gen(cur_plot$lm$test$pvalues[2],cur_plot$lm$test$pvalues[3],cur_plot$lm$test$pvalues[4],cur_plot$lme_test_Prior0$test$pvalues[2],cur_plot$lme_test_Prior1$test$pvalues[2],chunk_var_lab)`
-
+$$ Outcome \sim Probability + (1|Subject) $$
+`r RPE_str_gen(cur_plot$lm$test$pvalues[2], 'RPE')`
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
 
 kable(pvalue_table_func(filt_data,
-                        plot_var = paste(chunk_var,sep=''),
-                        prob_metric = 'prior_RPE',
-                        Prior_RWD = 'Prior_RWD'),
-      caption = 'Vigor P-Values for effect of RPE')
+                        plot_var = chunk_var,
+                        prob_metric = 'RPE',
+                        Prior_RWD = 'no'),
+      caption = paste(chunk_var_lab,' P-Values for effect of RPE',sep=''))
 
 cur_plot$plot 
 
