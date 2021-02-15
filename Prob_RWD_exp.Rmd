@@ -1995,7 +1995,7 @@ cur_plot <- plots[[chunk_var]][['RPE']]
 The linear model used to predict the effect of RPE is:
 
 $$ Outcome \sim Probability + (1|Subject) $$
-`r RPE_str_gen(cur_plot$lm$test$pvalues[2], 'RPE')`
+`r RPE_str_gen(cur_plot$lm$test$pvalues[2], 'PeakV-ReturnPeakV')`
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, fig.height = 5, fig.width = 8}
 
