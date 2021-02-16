@@ -34,7 +34,7 @@ gg_color_hue <- function(n) {
   hcl(h = hues, l = 65, c = 100)[1:n]
 }
 
-#====================== Load Fonts ================
+#+====================== Load Fonts ================
 # font_import()
 loadfonts(device='win')
 
@@ -47,10 +47,8 @@ theme_set(theme_classic(base_family = "Times")+
                   plot.title = element_text(hjust = 0.5)))
 
 # # Set these lines to the base directory of the experiment.
-# setwd('d:/Users/Gary/Google Drive/Yan Experiment')
-# main_folder = 'd:/Users/Gary/Google Drive/Yan Experiment'
-# setwd('F:/Google Drive/Yan Experiment')
-main_folder = 'C:/Users/drapu/Documents/GitHub/Prob_reward'
+# main_folder = 'C:/Users/drapu/Documents/GitHub/Prob_reward'
+main_folder = 'D:/Google Drive/Yan Experiment/code'
 setwd(main_folder)
 
 exp_name = '4t_180trial_4block'
@@ -1041,6 +1039,94 @@ ttest_post_table <- function(data, plot_var, plot_var_lab){
   return(kable(ptab2,caption = cap))
 }
 
+summary_table_func <- function(data, 
+                               prob_metric, 
+                               plot_var, 
+                               plot_var_lab,
+                               trial_or_subj = 'trial'){
+
+  plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',prob_metric,plot_var)]
+  colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability','probability_metric', 'plot_var')
+  
+  if (trial_or_subj == 'subj'){
+    
+    a = aggregate(plot_var ~ Subject + probability_metric,plotting_data, mean)
+    b = aggregate(plot_var ~ Subject + probability_metric,plotting_data, sd)
+    
+    c = aggregate(plot_var ~ probability_metric, a, mean)
+    d = aggregate(plot_var ~ probability_metric, a, sd)
+    
+    c = cbind(c,c$plot_var)
+    colnames(c) = c('probability_metric','mean','sd')
+    c$se = c$sd/sqrt(length(filter(a,probability_metric == min(a$probability_metric))$Subject))
+    c$lb = c$mean - 1.96*c$se
+    c$ub = c$mean + 1.96*c$se
+    
+    prob_metrics = sort(unique(plotting_data$probability_metric))
+    out_mat = matrix(,nrow = length(prob_metrics), ncol = 1)
+    col = 1
+    for (prob in prob_metrics){
+      row_data = filter(c, probability_metric == prob)
+      probability = row_data$probability_metric
+      row = match(probability,prob_metrics)
+      
+      cell = paste(formatC(row_data$mean,format='g',digits = 3),
+                   ' ± ',
+                   formatC(row_data$se,format='g',digits = 3),
+                   ' (',
+                   formatC(row_data$lb,format='g',digits = 3),
+                   ', ',
+                   formatC(row_data$ub,format='g',digits = 3),
+                   ')',sep='')
+      out_mat[row,col] = cell
+    }
+    rownames(out_mat) = prob_metrics
+    colnames(out_mat) = 'Mean ± SE (lb, ub)'
+    out_mat = kable(out_mat,
+                    caption = paste('Summary data table for ',plot_var_lab,'. Each row is a probability metric. This is compute subject average for each probability, then average the average. Data is shown as mean ± standard error (lower bound, upper bound) for the 95% confidence interval of that mean.',sep=''))
+    
+  } else {
+    
+    a = aggregate(plot_var ~ Subject + probability_metric,plotting_data, mean)
+    b = aggregate(plot_var ~ Subject + probability_metric,plotting_data, sd)
+    
+    c = cbind(a,b$plot_var)
+    colnames(c) = c('Subject','probability_metric','mean','sd')
+    c$se = c$sd/sqrt(length(filter(data,Subject == 1 & probability_metric == min(a$probability_metric))$Subject))
+    c$lb = c$mean - 1.96*c$se
+    c$ub = c$mean + 1.96*c$se
+    
+    prob_metrics = sort(unique(plotting_data$probability_metric))
+    out_mat = matrix(,nrow = length(unique(c$Subject)),ncol = length(prob_metrics))
+    for (subj in unique(plotting_data$Subject)){
+      for (prob in prob_metrics){
+        row_data = filter(c, Probability == prob & Subject == subj)
+        row = subj + 1
+        probability = row_data$Probability
+        col = match(probability,prob_metrics)
+        
+        cell = paste(formatC(row_data$mean,format='g',digits = 3),
+                     ' ± ',
+                     formatC(row_data$se,format='g',digits = 3),
+                     ' (',
+                     formatC(row_data$lb,format='g',digits = 3),
+                     ', ',
+                     formatC(row_data$ub,format='g',digits = 3),
+                     ')',sep='')
+        out_mat[row,col] = cell
+      }
+    }
+    rownames(out_mat) = sort(unique(plotting_data$Subject))
+    colnames(out_mat) = prob_metrics
+    
+    out_mat = kable(out_mat,
+                    caption = paste('Summary data table for ',plot_var_lab,'. Column is each probability metric, row is individual subject. Data is shown as mean ± standard error (lower bound, upper bound) for the 95% confidence interval of that mean.',sep=''))
+  }
+  
+  return(out_mat)
+}
+
+
 ttest_post_table_nocorrection <- function(data, plot_var, plot_var_lab){
   plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',plot_var)]
   colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability', 'plot_var')
@@ -1363,7 +1449,6 @@ priorRPE_str_gen <- function(lm_pval_prob, lm_pval_prior, lm_pval_int, lme_pval_
   
   return(paste(str_lm,'\n',str_lm_split,sep='\n'))
 }
-
 
 RPE_str_gen <- function(lm_pval_prob, variable){
   if (lm_pval_prob<0.05){
@@ -1747,14 +1832,22 @@ ttest_post_table(data = filt_data,
 ```
 
 These are the uncorrected paired t-test values
-
-```{r}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 ttest_post_table_nocorrection(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab)
-
 ```
+
+#### Summary Tables
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'Probability', 
+                   plot_var = chunk_var, 
+                   plot_var_lab = chunk_var_lab,
+                   trial_or_subj = 'subj')
+```
+
 
 #### Comparison of 0% and 100% Reward
 
@@ -1933,7 +2026,23 @@ kable(pvalue_table_func(filt_data,
                         Prior_RWD = 'Prior_RWD'),
       caption = 'Peak Velocity P-Values for effect of RPE')
 
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'NULL'),
+      caption = 'Peak Velocity P-Values for effect of RPE')
+
 cur_plot$plot
+
+```
+
+#### Summary Table RPE
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'prior_RPE', 
+                   plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                   plot_var_lab = paste('Diff Prior ',chunk_var_lab,sep=''),
+                   trial_or_subj = 'subj')
 
 ```
 
@@ -2003,13 +2112,20 @@ ttest_post_table(data = filt_data,
 ```
 
 These are the uncorrected paired t-test values
-
-```{r}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 ttest_post_table_nocorrection(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab)
+```
 
+#### Summary Tables
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'Probability', 
+                   plot_var = chunk_var, 
+                   plot_var_lab = chunk_var_lab,
+                   trial_or_subj = 'subj')
 ```
 
 #### Comparison of 0% and 100% Reward
@@ -2057,6 +2173,16 @@ kable(pvalue_table_func(filt_data,
       caption = paste(chunk_var_lab,' P-Values for effect of RPE',sep=''))
 
 cur_plot$plot 
+
+```
+
+#### Summary Table RPE
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'RPE', 
+                   plot_var = chunk_var,
+                   plot_var_lab = paste('Diff Prior ',chunk_var_lab,sep=''),
+                   trial_or_subj = 'subj')
 
 ```
 
@@ -2108,13 +2234,20 @@ ttest_post_table(data = filt_data,
 ```
 
 These are the uncorrected paired t-test values
-
-```{r}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 ttest_post_table_nocorrection(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab)
+```
 
+#### Summary Tables
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'Probability', 
+                   plot_var = chunk_var, 
+                   plot_var_lab = chunk_var_lab,
+                   trial_or_subj = 'subj')
 ```
 
 #### Comparison of 0% and 100% Reward
@@ -2297,7 +2430,23 @@ kable(pvalue_table_func(filt_data,
                         Prior_RWD = 'Prior_RWD'),
       caption = 'Reaction Time P-Values for effect of RPE')
 
+kable(pvalue_table_func(filt_data,
+                        plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                        prob_metric = 'prior_RPE',
+                        Prior_RWD = 'NULL'),
+      caption = 'Reaction Time P-Values for effect of RPE')
+
 cur_plot$plot
+
+```
+
+#### Summary Table RPE
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'prior_RPE', 
+                   plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                   plot_var_lab = paste('Diff Prior ',chunk_var_lab,sep=''),
+                   trial_or_subj = 'subj')
 
 ```
 
@@ -2346,13 +2495,20 @@ ttest_post_table(data = filt_data,
 ```
 
 These are the uncorrected paired t-test values
-
-```{r}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 ttest_post_table_nocorrection(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab)
+```
 
+#### Summary Tables
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'Probability', 
+                   plot_var = chunk_var, 
+                   plot_var_lab = chunk_var_lab,
+                   trial_or_subj = 'subj')
 ```
 
 #### Comparison of 0% and 100% Reward
@@ -2535,6 +2691,16 @@ cur_plot$plot
 
 ```
 
+#### Summary Table RPE
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'prior_RPE', 
+                   plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                   plot_var_lab = paste('Diff Prior ',chunk_var_lab,sep=''),
+                   trial_or_subj = 'subj')
+
+```
+
 # Movement Time
 ## Effect of Probability
 ```{r, echo = FALSE, warning = FALSE}
@@ -2580,13 +2746,20 @@ ttest_post_table(data = filt_data,
 ```
 
 These are the uncorrected paired t-test values
-
-```{r}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 ttest_post_table_nocorrection(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab)
+```
 
+#### Summary Tables
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'Probability', 
+                   plot_var = chunk_var, 
+                   plot_var_lab = chunk_var_lab,
+                   trial_or_subj = 'subj')
 ```
 
 #### Comparison of 0% and 100% Reward
@@ -2768,6 +2941,16 @@ cur_plot$plot
 
 ```
 
+#### Summary Table RPE
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'prior_RPE', 
+                   plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                   plot_var_lab = paste('Diff Prior ',chunk_var_lab,sep=''),
+                   trial_or_subj = 'subj')
+
+```
+
 # Total Duration
 
 Total time we define as reaction time plus movement time.
@@ -2816,13 +2999,20 @@ ttest_post_table(data = filt_data,
 ```
 
 These are the uncorrected paired t-test values
-
-```{r}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 ttest_post_table_nocorrection(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab)
+```
 
+#### Summary Tables
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'Probability', 
+                   plot_var = chunk_var, 
+                   plot_var_lab = chunk_var_lab,
+                   trial_or_subj = 'subj')
 ```
 
 #### Comparison of 0% and 100% Reward
@@ -3005,6 +3195,16 @@ cur_plot$plot
 
 ```
 
+#### Summary Table RPE
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'prior_RPE', 
+                   plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                   plot_var_lab = paste('Diff Prior ',chunk_var_lab,sep=''),
+                   trial_or_subj = 'subj')
+
+```
+
 # Vigor
 
 Vigor we define as (1/( Reaction Time + Movement Time)).
@@ -3053,13 +3253,20 @@ ttest_post_table(data = filt_data,
 ```
 
 These are the uncorrected paired t-test values
-
-```{r}
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
 ttest_post_table_nocorrection(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab)
+```
 
+#### Summary Tables
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'Probability', 
+                   plot_var = chunk_var, 
+                   plot_var_lab = chunk_var_lab,
+                   trial_or_subj = 'subj')
 ```
 
 #### Comparison of 0% and 100% Reward
@@ -3239,5 +3446,15 @@ kable(pvalue_table_func(filt_data,
       caption = 'Vigor P-Values for effect of RPE')
 
 cur_plot$plot
+
+```
+
+#### Summary Table RPE
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+summary_table_func(filt_data, 
+                   prob_metric = 'prior_RPE', 
+                   plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                   plot_var_lab = paste('Diff Prior ',chunk_var_lab,sep=''),
+                   trial_or_subj = 'subj')
 
 ```
