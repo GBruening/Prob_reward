@@ -1005,38 +1005,90 @@ tukey_test_table <- function(tukey_test){
   return(ptab)
 }
 
-ttest_post_table <- function(data, plot_var, plot_var_lab){
-  plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',plot_var)]
-  colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability', 'plot_var')
+ttest_post_table <- function(data,
+                             prob_metric = 'Probability',
+                             plot_var, 
+                             plot_var_lab, 
+                             correction = 'holm'){
+  plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',prob_metric,plot_var)]
+  colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability','prob_metric','plot_var')
   
-  data = aggregate(plot_var ~ Probability + Subject, plotting_data, mean)
-  
-  ptab = matrix(,ncol=3,nrow=3)
-  ptab[1,1] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0 | Probability == 0.33), paired = TRUE)$p.value
-  ptab[1,2] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0 | Probability == 0.66), paired = TRUE)$p.value
-  ptab[1,3] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0 | Probability == 1), paired = TRUE)$p.value
-  ptab[2,2] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0.33 | Probability == 0.66), paired = TRUE)$p.value
-  ptab[2,3] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0.33 | Probability == 1), paired = TRUE)$p.value
-  ptab[3,3] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0.66 | Probability == 1), paired = TRUE)$p.value
-  ptab = p.adjust(ptab, method = 'holm')
-  ptab2 = formatC(ptab, format = 'g', digits = 3)
-  ptab2 = unlist(ptab2)
-  
-  k=1
-  for (item in ptab){
-    if (!is.na(item) & item<0.05){
-      ptab2[k] = paste('*',ptab2[k],sep='')
+  if (prob_metric == 'Probability'){
+    data = aggregate(plot_var ~ Probability + Subject, plotting_data, mean)
+    
+    ptab = matrix(,ncol=3,nrow=3)
+    ptab[1,1] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0 | Probability == 0.33), paired = TRUE)$p.value
+    ptab[1,2] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0 | Probability == 0.66), paired = TRUE)$p.value
+    ptab[1,3] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0 | Probability == 1), paired = TRUE)$p.value
+    ptab[2,2] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0.33 | Probability == 0.66), paired = TRUE)$p.value
+    ptab[2,3] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0.33 | Probability == 1), paired = TRUE)$p.value
+    ptab[3,3] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0.66 | Probability == 1), paired = TRUE)$p.value
+    
+    if (correction == 'holm'){
+      ptab = p.adjust(ptab, method = 'holm')
+      cap = paste('Paired t-test post hoc comparisons with Holm-Bonferonni correction for ',plot_var_lab,'.',sep = '')
+    } else {
+      cap = paste('Paired t-test, no correction, for ',plot_var_lab,'.',sep = '')
     }
-    k = k + 1
+    ptab2 = formatC(ptab, format = 'g', digits = 3)
+    ptab2 = unlist(ptab2)
+    
+    k=1
+    for (item in ptab){
+      if (!is.na(item) & item<0.05){
+        ptab2[k] = paste('*',ptab2[k],sep='')
+      }
+      k = k + 1
+    }
+    
+    ptab2 = matrix(ptab2, nrow = 3)
+    rownames(ptab2) = c('0','1/3','2/3')
+    colnames(ptab2) = c('1/3','2/3','1')
+    
+    return(kable(ptab2,caption = cap))
+  } else if (prob_metric == 'RPE' || prob_metric == 'prior_RPE') {
+    data = aggregate(plot_var ~ prob_metric + Subject, plotting_data, mean)
+    
+    ptab = matrix(,ncol=4,nrow=4)
+    ptab[1,1] = t.test(plot_var ~ prob_metric, data = filter(data, prob_metric == -0.66 | prob_metric == -0.33), paired = TRUE)$p.value
+    ptab[1,2] = t.test(plot_var ~ prob_metric, data = filter(data, prob_metric == -0.66 | prob_metric == 0), paired = TRUE)$p.value
+    ptab[1,3] = t.test(plot_var ~ prob_metric, data = filter(data, prob_metric == -0.66 | prob_metric == 0.33), paired = TRUE)$p.value
+    ptab[1,4] = t.test(plot_var ~ prob_metric, data = filter(data, prob_metric == -0.66 | prob_metric == 0.66), paired = TRUE)$p.value
+    
+    ptab[2,2] = t.test(plot_var ~ prob_metric, data = filter(data, prob_metric == -0.33 | prob_metric == 0), paired = TRUE)$p.value
+    ptab[2,3] = t.test(plot_var ~ prob_metric, data = filter(data, prob_metric == -0.33 | prob_metric == 0.33), paired = TRUE)$p.value
+    ptab[2,4] = t.test(plot_var ~ prob_metric, data = filter(data, prob_metric == -0.33 | prob_metric == 0.66), paired = TRUE)$p.value
+    
+    ptab[3,3] = t.test(plot_var ~ prob_metric, data = filter(data, prob_metric == 0 | prob_metric == 0.33), paired = TRUE)$p.value
+    ptab[3,4] = t.test(plot_var ~ prob_metric, data = filter(data, prob_metric == 0 | prob_metric == 0.66), paired = TRUE)$p.value
+    
+    ptab[4,4] = t.test(plot_var ~ prob_metric, data = filter(data, prob_metric == 0.33 | prob_metric == 0.66), paired = TRUE)$p.value
+    
+    if (correction == 'holm'){
+      ptab = p.adjust(ptab, method = 'holm')
+      cap = paste('Paired t-test post hoc comparisons with Holm-Bonferonni correction for ',plot_var_lab,'.',sep = '')
+    } else {
+      cap = paste('Paired t-test, no correction, for ',plot_var_lab,'.',sep = '')
+    }
+    ptab2 = formatC(ptab, format = 'g', digits = 3)
+    ptab2 = unlist(ptab2)
+    
+    k=1
+    for (item in ptab){
+      if (!is.na(item) & item<0.05){
+        ptab2[k] = paste('*',ptab2[k],sep='')
+      }
+      k = k + 1
+    }
+    
+    ptab2 = matrix(ptab2, nrow = 4)
+    rownames(ptab2) = c('-2/3','-1/3','0','1/3')
+    colnames(ptab2) = c('-1/3','0','1/3','2/3')
+    
+    
+    return(kable(ptab2,caption = cap))
+    
   }
-  
-  ptab2 = matrix(ptab2, nrow = 3)
-  rownames(ptab2) = c('0','1/3','2/3')
-  colnames(ptab2) = c('1/3','2/3','1')
-  
-  cap = paste('Paired t-test post hoc comparisons with Holm-Bonferonni correction for ',plot_var_lab,'.',sep = '')
-  
-  return(kable(ptab2,caption = cap))
 }
 
 summary_table_func <- function(data, 
@@ -1124,40 +1176,6 @@ summary_table_func <- function(data,
   }
   
   return(out_mat)
-}
-
-
-ttest_post_table_nocorrection <- function(data, plot_var, plot_var_lab){
-  plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',plot_var)]
-  colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability', 'plot_var')
-  
-  data = aggregate(plot_var ~ Probability + Subject, plotting_data, mean)
-  
-  ptab = matrix(,ncol=3,nrow=3)
-  ptab[1,1] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0 | Probability == 0.33), paired = TRUE)$p.value
-  ptab[1,2] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0 | Probability == 0.66), paired = TRUE)$p.value
-  ptab[1,3] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0 | Probability == 1), paired = TRUE)$p.value
-  ptab[2,2] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0.33 | Probability == 0.66), paired = TRUE)$p.value
-  ptab[2,3] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0.33 | Probability == 1), paired = TRUE)$p.value
-  ptab[3,3] = t.test(plot_var ~ Probability, data = filter(data, Probability == 0.66 | Probability == 1), paired = TRUE)$p.value
-  ptab2 = formatC(ptab, format = 'g', digits = 3)
-  ptab2 = unlist(ptab2)
-  
-  k=1
-  for (item in ptab){
-    if (!is.na(item) & item<0.05){
-      ptab2[k] = paste('*',ptab2[k],sep='')
-    }
-    k = k + 1
-  }
-  
-  ptab2 = matrix(ptab2, nrow = 3)
-  rownames(ptab2) = c('0','1/3','2/3')
-  colnames(ptab2) = c('1/3','2/3','1')
-  
-  cap = paste('Paired t-test without correction for  ',plot_var_lab,'.',sep = '')
-  
-  return(kable(ptab2,caption = cap))
 }
 
 filt_data <- non_famil_data
@@ -1827,16 +1845,20 @@ We also compute an paired t-test with holm-bonferonni correction to determine if
 
 ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'hom')
 
 ```
 
 These are the uncorrected paired t-test values
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
-ttest_post_table_nocorrection(data = filt_data,
+ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'none')
 ```
 
 #### Summary Tables
@@ -2036,6 +2058,27 @@ cur_plot$plot
 
 ```
 
+#### T-Tests
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                 plot_var_lab = paste(chunk_var_lab,' Diff Prior (m/s)',sep=''),
+                 prob_metric = 'prior_RPE',
+                 correction = 'holm')
+
+```
+
+These are the uncorrected paired t-test values
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                 plot_var_lab = paste(chunk_var_lab,' Diff Prior (m/s)',sep=''),
+                 prob_metric = 'prior_RPE',
+                 correction = 'none')
+```
+
 #### Summary Table RPE
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 summary_table_func(filt_data, 
@@ -2107,17 +2150,22 @@ We also compute an paired t-test with holm-bonferonni correction to determine if
 
 ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'hom')
 
 ```
 
 These are the uncorrected paired t-test values
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
-ttest_post_table_nocorrection(data = filt_data,
+ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'none')
 ```
+
 
 #### Summary Tables
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
@@ -2176,6 +2224,28 @@ cur_plot$plot
 
 ```
 
+#### T-Tests
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'prior_RPE',
+                 correction = 'holm')
+
+```
+
+These are the uncorrected paired t-test values
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = chunk_var,
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'prior_RPE',
+                 correction = 'none')
+
+```
+
 #### Summary Table RPE
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 summary_table_func(filt_data, 
@@ -2229,17 +2299,22 @@ We also compute an paired t-test with holm-bonferonni correction to determine if
 
 ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'hom')
 
 ```
 
 These are the uncorrected paired t-test values
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
-ttest_post_table_nocorrection(data = filt_data,
+ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'none')
 ```
+
 
 #### Summary Tables
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
@@ -2440,6 +2515,27 @@ cur_plot$plot
 
 ```
 
+#### T-Tests
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                 plot_var_lab = paste(chunk_var_lab,' Diff Prior (m/s)',sep=''),
+                 prob_metric = 'prior_RPE',
+                 correction = 'holm')
+
+```
+
+These are the uncorrected paired t-test values
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                 plot_var_lab = paste(chunk_var_lab,' Diff Prior (m/s)',sep=''),
+                 prob_metric = 'prior_RPE',
+                 correction = 'none')
+```
+
 #### Summary Table RPE
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 summary_table_func(filt_data, 
@@ -2490,17 +2586,22 @@ We also compute an paired t-test with holm-bonferonni correction to determine if
 
 ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'hom')
 
 ```
 
 These are the uncorrected paired t-test values
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
-ttest_post_table_nocorrection(data = filt_data,
+ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'none')
 ```
+
 
 #### Summary Tables
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
@@ -2691,6 +2792,27 @@ cur_plot$plot
 
 ```
 
+#### T-Tests
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                 plot_var_lab = paste(chunk_var_lab,' Diff Prior (m/s)',sep=''),
+                 prob_metric = 'prior_RPE',
+                 correction = 'holm')
+
+```
+
+These are the uncorrected paired t-test values
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                 plot_var_lab = paste(chunk_var_lab,' Diff Prior (m/s)',sep=''),
+                 prob_metric = 'prior_RPE',
+                 correction = 'none')
+```
+
 #### Summary Table RPE
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 summary_table_func(filt_data, 
@@ -2741,17 +2863,22 @@ We also compute an paired t-test with holm-bonferonni correction to determine if
 
 ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'hom')
 
 ```
 
 These are the uncorrected paired t-test values
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
-ttest_post_table_nocorrection(data = filt_data,
+ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'none')
 ```
+
 
 #### Summary Tables
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
@@ -2941,6 +3068,27 @@ cur_plot$plot
 
 ```
 
+#### T-Tests
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                 plot_var_lab = paste(chunk_var_lab,' Diff Prior (m/s)',sep=''),
+                 prob_metric = 'prior_RPE',
+                 correction = 'holm')
+
+```
+
+These are the uncorrected paired t-test values
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                 plot_var_lab = paste(chunk_var_lab,' Diff Prior (m/s)',sep=''),
+                 prob_metric = 'prior_RPE',
+                 correction = 'none')
+```
+
 #### Summary Table RPE
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 summary_table_func(filt_data, 
@@ -2994,17 +3142,22 @@ We also compute an paired t-test with holm-bonferonni correction to determine if
 
 ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'hom')
 
 ```
 
 These are the uncorrected paired t-test values
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
-ttest_post_table_nocorrection(data = filt_data,
+ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'none')
 ```
+
 
 #### Summary Tables
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
@@ -3195,6 +3348,27 @@ cur_plot$plot
 
 ```
 
+#### T-Tests
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                 plot_var_lab = paste(chunk_var_lab,' Diff Prior (m/s)',sep=''),
+                 prob_metric = 'prior_RPE',
+                 correction = 'holm')
+
+```
+
+These are the uncorrected paired t-test values
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                 plot_var_lab = paste(chunk_var_lab,' Diff Prior (m/s)',sep=''),
+                 prob_metric = 'prior_RPE',
+                 correction = 'none')
+```
+
 #### Summary Table RPE
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 summary_table_func(filt_data, 
@@ -3248,16 +3422,20 @@ We also compute an paired t-test with holm-bonferonni correction to determine if
 
 ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'hom')
 
 ```
 
 These are the uncorrected paired t-test values
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 
-ttest_post_table_nocorrection(data = filt_data,
+ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
-                 plot_var_lab = chunk_var_lab)
+                 plot_var_lab = chunk_var_lab,
+                 prob_metric = 'Probability',
+                 correction = 'none')
 ```
 
 #### Summary Tables
@@ -3447,6 +3625,27 @@ kable(pvalue_table_func(filt_data,
 
 cur_plot$plot
 
+```
+
+#### T-Tests
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                 plot_var_lab = paste(chunk_var_lab,' Diff Prior (m/s)',sep=''),
+                 prob_metric = 'prior_RPE',
+                 correction = 'holm')
+
+```
+
+These are the uncorrected paired t-test values
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+ttest_post_table(data = filt_data,
+                 plot_var = paste('DiffPrior_',chunk_var,sep=''),
+                 plot_var_lab = paste(chunk_var_lab,' Diff Prior (m/s)',sep=''),
+                 prob_metric = 'prior_RPE',
+                 correction = 'none')
 ```
 
 #### Summary Table RPE
