@@ -16,19 +16,33 @@ confdata_file_name = 'vigor_conf_'+exp_name+'.pickle'
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
-os.chdir(dname)
+os.chdir(dname+'\\..\\')
 
 os.chdir(exp_name+'/Data')
-with open(confdata_file_name,'rb') as f:
-    temp = pickle.load(f) 
-    cfdata = temp[0]
-    target_data = temp[1]
-    del temp
-    os.chdir('../..')
+pickle_files = []
+n_files = 0
+cfdata = []
+target_data = []
+for file in os.listdir():
+    # if file.endswith('.pickle'):
+    if file.endswith('.pickle') and file[11:13]=='4t':
+        # file_name = 'vigor_conf_'+exp_name+'_'+str(n_files)+'.pickle'
+        file_name = file
+        with open(file_name,'rb') as f:
+            temp = pickle.load(f)
+            cfdata.append(temp[0])
+            target_data.append(temp[1])
+            del temp
+        n_files += 1
+        # if n_files > 3:
+        #     break
+os.chdir('..')
 
+os.chdir(dname+'\\..\\')
 os.chdir(exp_name)
 cfdf = pd.read_csv('vigor_conf_'+exp_name+'.csv')
 
+#%%
 # Functions
 def interp_func(data, onset_to_moveback):
         # Do Some Normalization stuff
@@ -56,11 +70,11 @@ min_thin_onset = 100000
 for s, subj in enumerate(cfdata):
     for t, trial in enumerate(subj.items()):
         min_thin_onset = min([min_thin_onset,
-                              len(trial[1]['P'])-trial[1]['vigor']['idx']['onset']])
+                             len(trial[1]['P'])-trial[1]['vigor']['idx']['onset']])
 
 # onset peakv at_target offset target_show moveback
-onset_or_targetshow = 'onset'
-offset_or_moveback = 'move_back'
+onset_or_targetshow = 'onset' #'move_back'
+offset_or_moveback = 'move_back' # 'offset'
 
 min_thin_target_show = 100000
 for s, subj in enumerate(cfdata):
@@ -71,7 +85,8 @@ for s, subj in enumerate(cfdata):
 # Put data into correct format
 r_prob = []
 est_prob = []
-diff_prob = []
+RPE = []
+prior_RPE = []
 c = []
 subject = []
 
@@ -175,11 +190,15 @@ for s, subj in enumerate(cfdata):
         
         est_prob.append(trial[1]['est_prob'])
         r_prob.append(trial[1]['r_prob'])
-        diff_prob.append(trial[1]['diff_prob'])
+        RPE.append(trial[1]['RPE'])
+        prior_RPE.append(trial[1]['prior_RPE'])
         trial_count += 1
     print('Subj: '+str(s)+', Trial: '+str(trial_count))
 
-arr_variables = ['c','subject','p','x','y','v','v_rad','vx','vy','a','ax','ay','est_prob','r_prob','diff_prob']
+#%%
+arr_variables = ['c','subject','p','x','y','v',
+                 'v_rad','vx','vy','a','ax','ay',
+                 'est_prob','r_prob','RPE','prior_RPE']
 labels = ['Condition',
            'Subject',
            'Position (m)',
@@ -193,7 +212,8 @@ labels = ['Condition',
            'X Acceleration (m^2/s)',
            'Y Acceleration (m^2/s)',
            'Reward Probability',
-           'Difference Probability'
+           'Reward Prediction Error (RPE)',
+           'Reward Prediction Error Previous Trial (RPE)'
 ]
 labels2 = ['Position',
            'X_Position',
@@ -236,23 +256,26 @@ import matplotlib.gridspec as gridspec
 
 os.chdir('Graphs')
 
-diff_probs = [np.round(item,2) for item in np.unique(diff_prob)]
+RPEs = [np.round(item,2) for item in np.unique(RPE)]
 probability_method = 'r_prob'
 
-for probability_method in ['r_prob','diff_prob']:
+for probability_method in ['r_prob','RPE','prior_RPE']:
     if probability_method == 'r_prob':
         independent_var = r_prob
-    elif probability_method == 'diff_prob':
-        independent_var = diff_prob
+    elif probability_method == 'RPE':
+        independent_var = RPE
+    elif probability_method == 'prior_RPE':
+        independent_var = prior_RPE
     else:
         raise 'Didn\'t select a probability method'
     independent_var_unique = np.unique(independent_var)
     independent_var_labs = [np.round(item,2) for item in np.unique(independent_var)]
 
-    for test_var_num in [0,3,4,7]:#range(len(test_var_abs)):
+    for test_var_num in [0,3,4]:#,7]:#range(len(test_var_abs)):
         plt.close('all')
         fig = plt.figure(figsize = (10,20))
         widths = [1, 1]
+        # heights = [.1, 1, .2, 1, .5, 1, .2, 1]
         heights = [.8, 1, .2, 1, .5, 1, .2, 1]
         spec5 = fig.add_gridspec(ncols=len(widths), nrows=len(heights), width_ratios=widths,height_ratios=heights)
         count = 0
@@ -264,12 +287,24 @@ for probability_method in ['r_prob','diff_prob']:
                 # axes[count].annotate(label, (0.1, 0.5), xycoords='axes fraction', va='center')
                 count += 1
 
-        hide_axis_numbers = [1,2,5,6,9,10,13,14]
-        for num in hide_axis_numbers:
-            axes[num-1].axis('off')
+        print('Processing SPM '+labels2[test_var_num]+' '+ probability_method)
+        # hide_axis_numbers = [1,2,5,6,9,10,13,14]
+        hide_axis_numbers = [0,1,4,5,8,9,12,13]
+        # for num in hide_axis_numbers:
+        #     axes[num-1].axis('off')
+        for number in hide_axis_numbers:
+            axes[number].axis('off')
 
-        axis_numbers = [3,4,5,6,9,10,11,12,15,16,17,18,21,22,23,24]
-        axis_numbers = [num - 1 for num in axis_numbers]
+            # axis_numbers = [3,4,5,6,9,10,11,12,15,16,17,18,21,22,23,24]
+            # axis_numbers = [num - 1 for num in axis_numbers]
+
+        # fig.text(.5,.91,'Absolute data',size = 30, ha='center')
+        # fig.text(.5,.89,'ANOVA Results',size = 20, ha='center')
+        # fig.text(.5,.69,'Regression Results',size = 20, ha='center')
+
+        # fig.text(.5,.48,'Normalized data',size = 30, ha='center')
+        # fig.text(.5,.46,'ANOVA Results',size = 20, ha='center')
+        # fig.text(.5,.28,'Regression Results',size = 20, ha='center')
 
         fig.text(.5,.91,'Absolute data',size = 30, ha='center')
         fig.text(.5,.88,'ANOVA Results',size = 20, ha='center')
@@ -282,7 +317,6 @@ for probability_method in ['r_prob','diff_prob']:
         fig.text(.5,.95,labels[test_var_num+2]+' SPM Analysis',size = 40, ha='center')
         ax_num = 2
         
-        print('Processing SPM '+labels2[test_var_num]+' '+ probability_method)
         for norm_plot in [0,1]:
             # test_var_num = 3
             test_var_label = labels[test_var_num+2]
@@ -350,7 +384,7 @@ for probability_method in ['r_prob','diff_prob']:
             for k, pos in enumerate(test_var):
                 if k % 20 == 0:
                     axes[ax_num].plot(pos, 
-                                    color = viridis((independent_var[k]-min(independent_var_unique))/(max(independent_var_unique)-min(independent_var_unique))))
+                                      color = viridis((independent_var[k]-min(independent_var_unique))/(max(independent_var_unique)-min(independent_var_unique))))
             sm = plt.cm.ScalarMappable(cmap=cm.get_cmap('viridis'))
             divider = make_axes_locatable(axes[ax_num])
             cax2 = divider.append_axes("right", size="3%", pad=0.05)
@@ -387,11 +421,11 @@ for probability_method in ['r_prob','diff_prob']:
             ax_num += 3
             print('     Regress SPM '+norm_lab+' '+labels2[test_var_num]+' done.')
         print('   Done with SPM '+labels2[test_var_num]+' '+probability_method)
-        fig.savefig('SPM_'+labels2[test_var_num]+'_'+probability_method+'.pdf',format = 'pdf')
-
+        fig_str = ('SPM_'+labels2[test_var_num][0:3]+'_'+probability_method+'_'+
+            onset_or_targetshow+'_to_'+offset_or_moveback+'.pdf')
+        fig.savefig(fig_str,format = 'pdf')
+        a = 1
 #%%
-
-
 os.chdir('..')
 
 # # Difference probability
@@ -440,20 +474,20 @@ os.chdir('..')
 #             exec('test_var = ' + test_var_abs[test_var_num])
 #             norm_lab = 'Abs'
 
-#         diff_probs = [np.round(item,2) for item in np.unique(diff_prob)]
-#         viridis = cm.get_cmap('viridis', len(diff_probs))
+#         RPEs = [np.round(item,2) for item in np.unique(RPE)]
+#         viridis = cm.get_cmap('viridis', len(RPEs))
 
 #         colors = ['#002996','#24c7c8','#26d625','#ffe365']
         
 #         ## Anova
 #         lines = []
-#         for k, cond in enumerate(diff_probs):
-#             lines.append(spm1d.plot.plot_mean_sd(test_var[diff_prob==cond],
+#         for k, cond in enumerate(RPEs):
+#             lines.append(spm1d.plot.plot_mean_sd(test_var[RPE==cond],
 #                          linecolor = viridis.colors[k],
 #                          ax = axes[ax_num]))
 #         lines = [line[0] for l, line in enumerate(lines)]
 #         axes[ax_num].legend(handles = lines, 
-#                             labels = [str(np.round(item,2)) for item in diff_probs], 
+#                             labels = [str(np.round(item,2)) for item in RPEs], 
 #                             loc='upper left')
 
 #         axes[ax_num].xaxis.set_major_locator(plt.MultipleLocator(100))
@@ -487,16 +521,16 @@ os.chdir('..')
 
 #         for k, pos in enumerate(test_var):
 #             if k % 20 == 0:
-#                 axes[ax_num].plot(pos, color = viridis(diff_prob[k]))
+#                 axes[ax_num].plot(pos, color = viridis(RPE[k]))
 #         sm = plt.cm.ScalarMappable(cmap=cm.get_cmap('viridis'))
 #         divider = make_axes_locatable(axes[ax_num])
 #         cax2 = divider.append_axes("right", size="3%", pad=0.05)
 #         cbar = fig.colorbar(sm,
-#                             ticks = [(item+.66)/2 for item in diff_probs],
+#                             ticks = [(item+.66)/2 for item in RPEs],
 #                             ax=axes[ax_num],
 #                             pad=0.004,
 #                             cax = cax2)
-#         cbar.ax.set_yticklabels([str(np.round(item,2)) for item in diff_probs])
+#         cbar.ax.set_yticklabels([str(np.round(item,2)) for item in RPEs])
 #         cbar.set_label('Difference Probability of Reward')
 
 #         axes[ax_num].xaxis.set_major_locator(plt.MultipleLocator(100))
@@ -508,7 +542,7 @@ os.chdir('..')
 #         axes[ax_num].set_ylabel(test_var_label)
 
 #         ax_num += 1
-#         t = spm1d.stats.regress(test_var, diff_prob)
+#         t = spm1d.stats.regress(test_var, RPE)
 #         ti = t.inference(alpha=0.05)
 #         ti.plot(ax=axes[ax_num])
 #         axes[ax_num].xaxis.set_major_locator(plt.MultipleLocator(100))

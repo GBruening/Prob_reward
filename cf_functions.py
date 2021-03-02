@@ -467,7 +467,8 @@ def est_p(data):
                                 'rewarded': 0,
                                 't_since_reward': k,
                                 'r_prob': 0,
-                                'diff_prob': 0})
+                                'RPE': 0,
+                                'prior_RPE': 0})
         else:
             trial_in_block = (k-16) % 180
             if trial_in_block == 0:
@@ -497,19 +498,20 @@ def est_p(data):
 
             data[trial].update({'r_prob': r_prob})
 
-            # Estimate probability differences
+            # RPE
             if len(data[trial]['EVENTS']['LABELS']) >= 3:
                 if data[trial]['EVENTS']['LABELS'][3][-4:] == 'getR':
-                    diff_prob = 1-r_prob
+                    RPE = 1-r_prob
                 else:
-                    diff_prob = -r_prob
+                    RPE = -r_prob
             else:
-                diff_prob = -r_prob
+                RPE = -r_prob
 
-            if diff_prob == 1 or (diff_prob == -1 and len(data[trial]['EVENTS']['LABELS']) >= 3):
-                print(trial + ' has an r_prob = ' + str(np.round(diff_prob,2)))
+            if RPE == 1 or (RPE == -1 and len(data[trial]['EVENTS']['LABELS']) >= 3):
+                print(trial + ' has an r_prob = ' + str(np.round(RPE,2)))
 
-            data[trial].update({'diff_prob': np.round(diff_prob,2)})
+            data[trial].update({'RPE': np.round(RPE,2)})
+            data[trial].update({'prior_RPE': data['trial_'+str(k)]['RPE']})
     return data
 
 def calc_errors(data, target_data):

@@ -41,15 +41,18 @@ os.chdir(exp_name+'/Data')
 
 pickle_files = []
 n_files = 0
-for file in os.listdir(): 
-    if file.endswith('.pickle'):
-        file_name = 'vigor_conf_postsqueeze_'+exp_name+'_'+str(n_files)+'.pickle'
+for file in os.listdir():
+    if file.endswith('.pickle') and file[11:22] == 'postsqueeze':
+        # file_name = 'vigor_conf_postsqueeze_'+exp_name+'_'+str(n_files)+'.pickle'
+        file_name = file[0:-7]+'.pickle'
         with open(file_name,'rb') as f:
             temp = pickle.load(f)
             cfdata.append(temp[0])
             target_data.append(temp[1])
             del temp
         n_files += 1
+        # if n_files > 3:
+        #     break
 os.chdir('..')
 
 #%%
@@ -104,16 +107,14 @@ for s, subj_data in enumerate(cfdata):
             del subj_data[trial][item]
 
 #%%
-# # Save the data
-# if save_data:
-#     os.chdir('Data')
-#     with open(confdata_file_name+'1-10.pickle', 'wb') as f:
-#         print('Data saved as: '+confdata_file_name+'.pickle')
-#         pickle.dump([cfdata[0:9], target_data[0:9]], f)
-#     with open(confdata_file_name+'11-.pickle', 'wb') as f:
-#         print('Data saved as: '+confdata_file_name+'.pickle')
-#         pickle.dump([cfdata[10:len(cfdata)], target_data[10:len(cfdata)]], f)
-#     os.chdir('..')
+# Save the data
+if save_data:
+    os.chdir('Data')
+    for s, subj in enumerate(cfdata):
+        with open(confdata_file_name+'_'+str(s)+'.pickle', 'wb') as f:
+            print('Data saved as: '+confdata_file_name+'_'+str(s)+'.pickle')
+            pickle.dump([cfdata[s], target_data[s]], f)
+    os.chdir('..')
 
 #%%
 # Put into a dataframe
@@ -133,14 +134,15 @@ for s, subj in enumerate(cfdata):
                      np.squeeze(cfdata[s][trial]['t_diff'][cfdata[s][trial]['vigor']['idx']['onset']]), #10
                      cfdata[s][trial]['est_prob'],
                      cfdata[s][trial]['r_prob'],
-                     cfdata[s][trial]['diff_prob'],
-                     cfdata[s][trial]['rewarded'],
-                     cfdata[s][trial]['t_since_reward'],  #15
+                     cfdata[s][trial]['RPE'],
+                     cfdata[s][trial]['prior_RPE'],
+                     cfdata[s][trial]['rewarded'],  #15
+                     cfdata[s][trial]['t_since_reward'],
                      cfdata[s][trial]['vigor']['error_dist'],
                      cfdata[s][trial]['vigor']['move_back_error'],
                      cfdata[s][trial]['vigor']['error_angle'],
-                     np.max(cfdata[s][trial]['P']),
-                     cfdata[s][trial]['P'][cfdata[s][trial]['vigor']['idx']['onset']] #20
+                     np.max(cfdata[s][trial]['P']), #20
+                     cfdata[s][trial]['P'][cfdata[s][trial]['vigor']['idx']['onset']]
                      ])
         if cfdata[s][trial]['rewarded']==-1:
             print(str(cfdata[s][trial]['rewarded']))
@@ -158,14 +160,15 @@ cfdf.columns = ['subj', #1
                 'react_vel_target', #10
                 'est_prob',
                 'r_prob',
-                'diff_prob',
-                'rewarded',
-                't_since_reward', #15
+                'RPE',
+                'prior_RPE',
+                'rewarded', #15
+                't_since_reward',
                 'error_dist',
                 'move_back_error',
                 'error_angle',
-                'maxex',
-                'react_pos' #20
+                'maxex', #20
+                'react_pos'
                 ]
 #%%
 # Add targets to the data frame.

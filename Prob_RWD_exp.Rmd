@@ -361,7 +361,8 @@ Prob_plotting <- function(data,
                           Prior_RWD = 'Prior_RWD',
                           title_lab = 'Null',
                           titles = 'Null',
-                          rpe_split = 'Probability'){
+                          rpe_split = 'Probability',
+                          subj_split = 'Null'){
 
   plotting_data = data[,c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability',prob_method,plot_var)]
   colnames(plotting_data) = c('Subject','Trial','Trial_in_Block','Target','Target_num','Block','RWD','Prior_RWD','NRWD_Run','Probability','probability_metric', 'plot_var')
@@ -380,9 +381,11 @@ Prob_plotting <- function(data,
       
     } else {
       lme_test <- cftest(lmer(plot_var ~ probability_metric + (1|Subject), data = plotting_data))
-      lme_test_t14 <- cftest(lmer(plot_var ~ probability_metric + (1|Subject), 
-                                  data = rbind(filter(plotting_data,probability_metric==1),
-                                               filter(plotting_data,probability_metric==0))))
+      if ( 0 %in% unique(plotting_data$probability_metric)){
+        lme_test_t14 <- cftest(lmer(plot_var ~ probability_metric + (1|Subject), 
+                                    data = rbind(filter(plotting_data,probability_metric==1),
+                                                 filter(plotting_data,probability_metric==0))))
+      }
       
       lme_test_Prior1 <- cftest(lmer(plot_var ~ probability_metric + (1|Subject), 
                                      data = filter(plotting_data,RWD==1)))
@@ -583,101 +586,6 @@ Prob_plotting <- function(data,
     }
   }
   
-  # if (prob_method == 'RPE'){
-  #   
-  #   lme_test <- cftest(lmer(plot_var ~ probability_metric + (1|Subject), data = plotting_data))
-  #   lme_test_t14 <- cftest(lmer(plot_var ~ probability_metric + (1|Subject), 
-  #                               data = rbind(filter(plotting_data,probability_metric==1),
-  #                                            filter(plotting_data,probability_metric==0))))
-  #   
-  #   lme_test_Prior1 <- cftest(lmer(plot_var ~ probability_metric + (1|Subject), 
-  #                                  data = filter(plotting_data,RWD==1)))
-  #   lme_test_Prior0 <- cftest(lmer(plot_var ~ probability_metric + (1|Subject), 
-  #                                  data = filter(plotting_data,RWD==0)))
-  #   
-  #   #============= No Facet Abs
-  #   a1 = aggregate(plot_var ~ probability_metric + RWD + Probability + Subject, plotting_data,mean)
-  #   a  = aggregate(plot_var ~ probability_metric + RWD + Probability,a1,mean)
-  #   b  = aggregate(plot_var ~ probability_metric + RWD + Probability,a1,sd)/sqrt(max(a1$Subject))#/sqrt(length(plotting_data[,1]))
-  #   c  = cbind(a,b$plot_var)
-  #   colnames(c) = c('probability_metric','RWD','Probability','plot_var','plot_var_se')
-  #   
-  #   g<-ggplot(data = c,
-  #             aes(x = probability_metric,
-  #                 y = plot_var,
-  #                 color = factor(Probability),
-  #                 group = factor(Probability)))+
-  #     geom_point(data = filter(c,RWD == 0),
-  #                aes(x = probability_metric,
-  #                    y = plot_var,
-  #                    group = factor(Probability),
-  #                    color = factor(Probability),
-  #                    shape = factor(RWD)),
-  #                size = 5,
-  #                position = position_dodge(width = .2))+
-  #     geom_line(data = filter(c,RWD == 0),
-  #               aes(x = probability_metric,
-  #                   y = plot_var,
-  #                   group = factor(Probability),
-  #                   color = factor(Probability)),
-  #               size = 1,
-  #               position = position_dodge(width = .2))+
-  #     geom_errorbar(data=filter(c,RWD == 0),
-  #                   aes(x = probability_metric,
-  #                       ymin = plot_var-plot_var_se,
-  #                       ymax = plot_var+plot_var_se,
-  #                       group = factor(Probability),
-  #                       color = factor(Probability)),
-  #                   size = 1,
-  #                   width = .2,
-  #                   position = position_dodge(width = .2))+
-  #     geom_point(data = filter(c,RWD == 1),
-  #                aes(x = probability_metric,
-  #                    y = plot_var,
-  #                    group = factor(Probability),
-  #                    color = factor(Probability),
-  #                    shape = factor(RWD)),
-  #                size = 5,
-  #                position = position_dodge(width = .2))+
-  #     geom_line(data = filter(c,RWD == 1),
-  #               aes(x = probability_metric,
-  #                   y = plot_var,
-  #                   group = factor(Probability),
-  #                   color = factor(Probability)),
-  #               size = 1,
-  #               position = position_dodge(width = .2))+
-  #     geom_errorbar(data = filter(c,RWD == 1),
-  #                   aes(x = probability_metric,
-  #                       ymin = plot_var-plot_var_se,
-  #                       ymax = plot_var+plot_var_se,
-  #                       group = factor(Probability),
-  #                       color = factor(Probability)),
-  #                   size = 1,
-  #                   width = .2,
-  #                   position = position_dodge(width = .2))+
-  #     scale_shape_manual(values = c(16,15), labels = c('0','1'))+
-  #     labs(x = 'Reward Prediction Error (RPE)',
-  #          y = var_lab,
-  #          color = 'Current Target\nProbability',
-  #          shape = 'Prior\nReward')
-  #   
-  #   
-  #   ret_list <- list('lm' = lme_test,
-  #                    'plot' = g)
-  #   if (exists('lme_test_t14')){
-  #     ret_list[['lm14']] = lme_test_t14
-  #   }
-  #   if (exists('ano14')){
-  #     ret_list[['ano14']] = ano14
-  #   }
-  #   if (exists('lme_test_Prior1')){
-  #     ret_list[['lme_test_Prior1']] = lme_test_Prior1
-  #   }
-  #   if (exists('lme_test_Prior0')){
-  #     ret_list[['lme_test_Prior0']] = lme_test_Prior0
-  #   }
-  #   return(ret_list)
-  # }
   
   if (Prior_RWD == 'Prior_RWD'){
     
@@ -783,7 +691,9 @@ Prob_plotting <- function(data,
         # geom_hline(yintercept = mean(filter(plotting_data,probability_metric == 0)$plot_var),linetype='dashed',size=.5)+
         labs(x = 'Probability of Reward',
              y = var_lab,
-             title = paste('LMER P-Values.\nProb Metric: ',
+             color = 'Prior\nReward')
+      if (titles == 'TRUE'){
+        g <-  g+labs(title = paste('LMER P-Values.\nProb Metric: ',
                            formatC(lme_test$test$pvalues[2],format="e",digits = 3),
                            ',\nPrior Rwd: ',
                            formatC(lme_test$test$pvalues[3],format="e",digits = 3),
@@ -793,8 +703,8 @@ Prob_plotting <- function(data,
                            # formatC(lme_test$test$coefficients[2],format="e",digits = 3),
                            # '\nOnly target 1/4: ',
                            # round(lme_test_t14$test$pvalues[2],digits = 4),
-                           sep=''),
-             color = 'Prior\nReward')#+theme(legend.position = 'none')
+                           sep=''))#+theme(legend.position = 'none')
+      }
       if (prob_method == 'DiffPrior_Probability'){
         g <- g+labs(x = 'Probability difference from previous trial of reward')
       }
@@ -864,7 +774,7 @@ Prob_plotting <- function(data,
                            round(lme_test_t14$test$pvalues[2],digits = 4),
                            sep=''))
       }
-    } else if (plot_type == 'nv') {
+    } else if (plot_type == 'nv' & subj_split == 'Null') {
       
       # Non-Violin Plot
       a1 = aggregate(plot_var ~ probability_metric + Subject,plotting_data,mean)
@@ -895,6 +805,7 @@ Prob_plotting <- function(data,
         labs(x = 'Probability of Reward',
              y = var_lab)+
         theme(legend.position = 'none')
+      
       if (titles == 'TRUE'){
         g <- g+ labs(title = paste('LMER P-Value: ',
                            formatC(lme_test$test$pvalues[2],format="e",digits = 3),
@@ -903,7 +814,31 @@ Prob_plotting <- function(data,
                            '\nOnly Target 1/4: ',
                            round(lme_test_t14$test$pvalues[2],digits = 4),
                            sep=''))
+      } 
+      if (title_lab != 'Null'){
+        g <- g+labs(title = title_lab)
       }
+    } else if (plot_type == 'nv' & subj_split == 'subj') {
+      
+        # Non-Violin Plot
+        a1 = aggregate(plot_var ~ probability_metric + Subject,plotting_data,mean)
+        a  = aggregate(plot_var ~ probability_metric ,a1,mean)
+        b  = aggregate(plot_var ~ probability_metric ,a1,sd)/sqrt(max(a1$Subject))#/sqrt(length(plotting_data[,1]))
+        c  = cbind(a,b$plot_var)
+        colnames(c) = c('probability_metric','plot_var','plot_var_se')
+        
+        g <- ggplot()+
+          geom_point(data = a1,
+                     aes(x = probability_metric,
+                         y = plot_var))+
+          geom_line(data = a1,
+                     aes(x = probability_metric,
+                         y = plot_var,
+                         group = Subject))+
+          geom_hline(yintercept = mean(filter(plotting_data,probability_metric == 0)$plot_var),linetype='dashed',size=.5)+
+          labs(x = 'Probability of Reward',
+               y = var_lab)+
+          theme(legend.position = 'none')
       if (title_lab != 'Null'){
         g <- g+labs(title = title_lab)
       }
@@ -1634,6 +1569,23 @@ for (k in 1:length(testable_vars)){
                                                       title_lab = 'ABS',
                                                       Prior_RWD = '0')
   
+  plots[[testable_vars[k]]][['Delta']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',testable_vars[k],sep=''),
+                                                 var_lab = paste(testable_vars_labels[k],' DELTA (m/s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'DELTA',
+                                                 Prior_RWD = '0')
+  
+  plots[[testable_vars[k]]][['Delta_subj']] <- Prob_plotting(data= filt_data,
+                                                 prob_method = 'Probability',
+                                                 plot_var = paste('Delta',testable_vars[k],sep=''),
+                                                 var_lab = paste(testable_vars_labels[k],' DELTA (m/s)',sep=''),
+                                                 plot_type = 'nv',
+                                                 title_lab = 'DELTA',
+                                                 Prior_RWD = '0',
+                                                 subj_split = 'subj')
+  
   plots[[testable_vars[k]]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
                                                             prob_method = 'Probability',
                                                             plot_var = testable_vars[k],
@@ -1641,6 +1593,15 @@ for (k in 1:length(testable_vars)){
                                                             plot_type = 'nv',
                                                             title_lab = 'ABS',
                                                             Prior_RWD = 'Prior_RWD')
+  
+  plots[[paste('Delta',testable_vars[k],sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
+                                                   prob_method = 'Probability',
+                                                   plot_var = paste('Delta',testable_vars[k],sep=''),
+                                                   var_lab = paste('Delta ',testable_vars_labels[k],' (m/s)',sep=''),
+                                                   plot_type = 'nv',
+                                                   title_lab = 'ABS',
+                                                   Prior_RWD = 'Prior_RWD')
+  
   
   plots[[testable_vars[k]]][['RPE_split_prob']] <- Prob_plotting(filt_data,
                                            prob_method = 'prior_RPE',
@@ -1960,14 +1921,6 @@ plot_grid(pval_plot_RPE,pval_plot_RPE_split,
 chunk_var = 'PeakV'
 chunk_var_lab = 'Peak Velocity'
 
-plots[[chunk_var]][['Delta']] <- Prob_plotting(data= filt_data,
-                                               prob_method = 'Probability',
-                                               plot_var = paste('Delta',chunk_var,sep=''),
-                                               var_lab = paste(chunk_var_lab,' DELTA (m/s)',sep=''),
-                                               plot_type = 'nv',
-                                               title_lab = 'DELTA',
-                                               Prior_RWD = '0')
-
 cur_plot = plots[[chunk_var]][['abs']]
 ```
 
@@ -1996,7 +1949,7 @@ ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab,
                  prob_metric = 'Probability',
-                 correction = 'hom')
+                 correction = 'holm')
 
 ```
 
@@ -2073,23 +2026,6 @@ plots[[chunk_var]][['Prior_RWD_bar']][['plot']]
 ```
 
 ```{r, echo = FALSE, warning = FALSE}
-
-plots[[chunk_var]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
-                                                 prob_method = 'Probability',
-                                                 plot_var = chunk_var,
-                                                 var_lab = paste(chunk_var_lab,' (m/s)',sep=''),
-                                                 plot_type = 'nv',
-                                                 title_lab = 'ABS',
-                                                 Prior_RWD = 'Prior_RWD')
-
-plots[[paste('Delta',chunk_var,sep='')]][['Prior_RWD']] <- Prob_plotting(data= filt_data,
-                                                 prob_method = 'Probability',
-                                                 plot_var = paste('Delta',chunk_var,sep=''),
-                                                 var_lab = paste('Delta ',chunk_var_lab,' (m/s)',sep=''),
-                                                 plot_type = 'nv',
-                                                 title_lab = 'ABS',
-                                                 Prior_RWD = 'Prior_RWD')
-
 cur_plot <- plots[[chunk_var]][['Prior_RWD']]
 ```
 
@@ -2327,7 +2263,7 @@ ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab,
                  prob_metric = 'Probability',
-                 correction = 'hom')
+                 correction = 'holm')
 
 ```
 
@@ -2478,7 +2414,7 @@ ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab,
                  prob_metric = 'Probability',
-                 correction = 'hom')
+                 correction = 'holm')
 
 ```
 
@@ -2767,7 +2703,7 @@ ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab,
                  prob_metric = 'Probability',
-                 correction = 'hom')
+                 correction = 'holm')
 
 ```
 
@@ -3046,7 +2982,7 @@ ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab,
                  prob_metric = 'Probability',
-                 correction = 'hom')
+                 correction = 'holm')
 
 ```
 
@@ -3327,7 +3263,7 @@ ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab,
                  prob_metric = 'Probability',
-                 correction = 'hom')
+                 correction = 'holm')
 
 ```
 
@@ -3609,7 +3545,7 @@ ttest_post_table(data = filt_data,
                  plot_var = chunk_var,
                  plot_var_lab = chunk_var_lab,
                  prob_metric = 'Probability',
-                 correction = 'hom')
+                 correction = 'holm')
 
 ```
 
