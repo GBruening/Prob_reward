@@ -21,7 +21,6 @@ a = plot_grid(plots[[chunk_var]][['RPE_split_prob']][['plot']],
 ggsave(paste(chunk_var,'_RPE.pdf',sep=''),plot =a, useDingbats = FALSE, width = 12, height = 12)
 
 
-
 chunk_var = 'RT'
 
 a = plot_grid(plots[[chunk_var]][['abs']][['plot']],
@@ -69,13 +68,23 @@ a = plot_grid(plots[['PeakV']][['abs']][['plot']],
               labels = 'AUTO')
 ggsave(paste('PeakV_RT.pdf',sep=''),plot =a, useDingbats = FALSE, width = 12, height = 8)
 
-a = plot_grid(plots[['PeakV']][['Prior_RWD']][['plot']],
-              plots[['DeltaPeakV']][['Prior_RWD']][['plot']],
-              plots[['RT']][['Prior_RWD']][['plot']],
-              plots[['DeltaRT']][['Prior_RWD']][['plot']],
-              ncol=2,
+a = plot_grid(plot_grid(plots[['PeakV']][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+                        plots[['DeltaPeakV']][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+                        plots[['RT']][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+                        plots[['DeltaRT']][['Prior_RWD']][['plot']]+theme(legend.position = 'none'),
+                        ncol=2,
+                        labels = 'AUTO'),
+              get_legend(plots[['PeakV']][['Prior_RWD']][['plot']]),
+              ncol = 2,
+              rel_widths = c(10,1))
+ggsave(paste('PriorRWD_PeakV_RT.pdf',sep=''),plot =a, useDingbats = FALSE, width = 8*11/10, height = 8)
+
+
+a = plot_grid(plots[['PeakV_Diff']][['Prior_RWD_bar']][['plot']],
+              plots[['RT_Diff']][['Prior_RWD_bar']][['plot']],
+              ncol = 2,
               labels = 'AUTO')
-ggsave(paste('PeakV_RT.pdf',sep=''),plot =a, useDingbats = FALSE, width = 12, height = 8)
+ggsave(paste('PriorRWD_diff_PeakV_RT.pdf',sep=''),plot =a, useDingbats = FALSE, width = 10, height = 5)
 
 
 library(predictmeans)
