@@ -1,10 +1,11 @@
 ---
-title: "Prob_RWD_exp"
+title: "Prob_RWD_Rand_block"
 author: "Garrick Bruening"
 output:
   bookdown::html_document2:
     toc: true
   bookdown::pdf_document2: default
+knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = encoding, output_file = file.path(dirname(inputFile), 'Prob_RWD_Rand_block.html')) })
 ---
 
 ```{r setup, include=FALSE}
@@ -49,15 +50,19 @@ theme_set(theme_classic(base_family = "Times")+
 # # Set these lines to the base directory of the experiment.
 # main_folder = 'C:/Users/drapu/Documents/GitHub/Prob_reward'
 main_folder = 'D:/Google Drive/Yan Experiment/code'
+# main_folder = 'd:/Users/Gary/Google Drive/Yan Experiment/code'
 setwd(main_folder)
 
 exp_name = '4t_180trial_4block'
-# setwd(exp_name)
+exp_name = 'Rand_block'
+# setwd(paste(main_folder[1:length(main_folder)-5],'/',exp_name,sep=''))
 raw_data = read.csv(paste('vigor_conf_',exp_name,'.csv',sep=''))
 
 raw_data$vigor = 1/(raw_data$react_time+raw_data$move_dur)
 raw_data$total_dur = raw_data$react_time+raw_data$move_dur
 raw_data$PeakVinout = raw_data$peak_vel - raw_data$peak_vel_moveback
+
+raw_data[raw_data$RPE > 0.01,'RPE'] = raw_data[raw_data$RPE > 0.01,'RPE'] - 0.01
 
 #====================== Filter and add Probs ================
 rm_fail_data = raw_data[raw_data$rewarded != -1,]
@@ -83,14 +88,14 @@ for (k in 1:length(non_famil_data$trial)){
 non_famil_data$trial_in_block= (trials-1)%%180+1
 
 blocks = c()
-probs = c()
+# probs = c()
 counter = 1
 subj = 1
 block = 1
 
-block_prob = matrix(c(1,.66,.33,0,.33,0,1,.66,0,1,.66,.33,.66,.33,0,1),
-                    nrow = 4,
-                    byrow = TRUE)
+# block_prob = matrix(c(1,.66,.33,0,.33,0,1,.66,0,1,.66,.33,.66,.33,0,1),
+#                     nrow = 4,
+#                     byrow = TRUE)
 
 for (k in 1:length(non_famil_data$trial)){
   if (non_famil_data[k,]$subj!=subj){
@@ -98,14 +103,15 @@ for (k in 1:length(non_famil_data$trial)){
     block = 1
   }
   blocks = c(blocks,block)
-  probs = c(probs,block_prob[block,non_famil_data[k,]$target])
+  # probs = c(probs,block_prob[block,non_famil_data[k,]$target])
   if (non_famil_data[k,]$trial_in_block == 180){
     block = block + 1
   }
 }
-non_famil_data$probs = round(probs,2)
+# non_famil_data$probs = round(probs,2)
 non_famil_data$block = blocks
-non_famil_data = filter(non_famil_data, r_prob == probs)
+# non_famil_data = filter(non_famil_data, r_prob == probs)
+non_famil_data$probs = non_famil_data$r_prob
 
 # ==================== Renaming =================
 dan_names = c('Subject',
@@ -128,7 +134,7 @@ dan_names = c('Subject',
               'Trial_in_Block',
               'Target_num',
               'NRWD_Run',
-              'RPE')
+              'Diff_prob')
 
 gary_names = c('subj',
                'trial',
@@ -292,6 +298,7 @@ non_famil_data[non_famil_data$DiffPrior_Prob == -0.67, 'DiffPrior_Probability'] 
 non_famil_data[non_famil_data$DiffPrior_Prob == -0.34, 'DiffPrior_Probability'] = non_famil_data[non_famil_data$DiffPrior_Prob == -0.34, 'DiffPrior_Probability']+0.01
 non_famil_data[non_famil_data$DiffPrior_Prob == 0.67, 'DiffPrior_Probability'] = non_famil_data[non_famil_data$DiffPrior_Prob == 0.67, 'DiffPrior_Probability']-0.01
 non_famil_data[non_famil_data$DiffPrior_Prob == 0.34, 'DiffPrior_Probability'] = non_famil_data[non_famil_data$DiffPrior_Prob == 0.34, 'DiffPrior_Probability']-0.01
+non_famil_data$Diff_prob = non_famil_data$DiffPrior_Probability
 
 
 prior_RPE = c()
@@ -341,12 +348,15 @@ add_n_back <- function(data,n_back){
   return(data)
 }
 
-for (n_back in c(1)){#},3,5,10)){
+for (n_back in c(1,10)){#},3,5,10)){
   non_famil_data <- add_n_back(non_famil_data,n_back)
 }
+
 non_famil_data$one_back_rate <- non_famil_data$one_back_rate*2
 non_famil_data$Prior_RWD <- non_famil_data$one_back_rate
 
+filt_data <- non_famil_data
+plots <- list()
 
 ```
 
@@ -1238,10 +1248,6 @@ summary_table_func <- function(data,
   }
   return(out_mat)
 }
-
-filt_data <- non_famil_data
-plots <- list()
-
 
 prob_str_gen <- function(p_val, slope, variable){
   if (p_val<0.05){

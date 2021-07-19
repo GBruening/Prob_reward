@@ -40,7 +40,8 @@ sys.path.append('/KINARMAnalysisScriptsv3')
 # exp_name = '4_Target_Data' # Change this to determine which data set to use
 # file_name = 'vigor_conf_postsqueeze_4targetpilot.pickle'
 
-exp_name = '4t_180trial_4block' # Change this to determine which data set to use
+# exp_name = '4t_180trial_4block' # Change this to determine which data set to use
+exp_name = 'Rand_block'
 file_name = 'vigor_conf_postsqueeze_'+exp_name+'.pickle'
 
 # Switch to data folder and see if there's already pulled data. If pulled data

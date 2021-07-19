@@ -27,8 +27,9 @@ from cf_functions import *
 # file_name = 'vigor_conf_postsqueeze_4targetpilot.pickle'
 # confdata_file_name = 'vigor_conf_4t'
 
-exp_name = '4t_180trial_4block' # Change this to determine which data set to use
-confdata_file_name = 'vigor_conf_4t_180trial_4block'
+# exp_name = '4t_180trial_4block' # Change this to determine which data set to use
+exp_name = 'Rand_block'
+confdata_file_name = 'vigor_conf_'+exp_name
 
 cfdata = []
 target_data = []
@@ -36,6 +37,7 @@ target_data = []
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname+'\\..\\')
+exp_dir = dname+'\\..\\'+exp_name+'\\'
 
 os.chdir(exp_name+'/Data')
 
@@ -134,15 +136,22 @@ for s, subj in enumerate(cfdata):
                      np.squeeze(cfdata[s][trial]['t_diff'][cfdata[s][trial]['vigor']['idx']['onset']]), #10
                      cfdata[s][trial]['est_prob'],
                      cfdata[s][trial]['r_prob'],
+                     cfdata[s][trial]['diff_prob'],
                      cfdata[s][trial]['RPE'],
-                     cfdata[s][trial]['prior_RPE'],
-                     cfdata[s][trial]['rewarded'],  #15
+                     cfdata[s][trial]['prior_RPE'], #15
+                     cfdata[s][trial]['rewarded'],
                      cfdata[s][trial]['t_since_reward'],
                      cfdata[s][trial]['vigor']['error_dist'],
                      cfdata[s][trial]['vigor']['move_back_error'],
-                     cfdata[s][trial]['vigor']['error_angle'],
-                     np.max(cfdata[s][trial]['P']), #20
-                     cfdata[s][trial]['P'][cfdata[s][trial]['vigor']['idx']['onset']]
+                     cfdata[s][trial]['vigor']['error_angle'], #20
+                     np.max(cfdata[s][trial]['P']),
+                     cfdata[s][trial]['P'][cfdata[s][trial]['vigor']['idx']['onset']],
+                     cfdata[s][trial]['prior_RWD'],
+                     cfdata[s][trial]['vigor']['idx']['target_show'],
+                     cfdata[s][trial]['vigor']['idx']['onset'], #25
+                     cfdata[s][trial]['vigor']['idx']['peakv'],
+                     cfdata[s][trial]['vigor']['idx']['retpeakv'],
+                     len(cfdata[s][trial]['rad_v'])
                      ])
         if cfdata[s][trial]['rewarded']==-1:
             print(str(cfdata[s][trial]['rewarded']))
@@ -160,15 +169,22 @@ cfdf.columns = ['subj', #1
                 'react_vel_target', #10
                 'est_prob',
                 'r_prob',
+                'diff_prob',
                 'RPE',
-                'prior_RPE',
-                'rewarded', #15
+                'prior_RPE', #15
+                'rewarded',
                 't_since_reward',
                 'error_dist',
                 'move_back_error',
-                'error_angle',
-                'maxex', #20
-                'react_pos'
+                'error_angle', #20
+                'maxex',
+                'react_pos',
+                'prior_RWD',
+                'idx_target_show',
+                'idx_onset', #25
+                'idx_peakv',
+                'idx_retpeakv',
+                'trial_length'
                 ]
 #%%
 # Add targets to the data frame.
@@ -182,6 +198,9 @@ if save_data:
     # os.chdir('Data')
     cfdf.to_csv(confdata_file_name+'.csv',index=False)
     print('Saved csv file as: '+confdata_file_name+'.csv')
-    os.chdir('..')
+    # os.chdir('..')
+    os.chdir(dname)
+    cfdf.to_csv(confdata_file_name+'.csv',index=False)
+    os.chdir(exp_dir)
 
 #%%

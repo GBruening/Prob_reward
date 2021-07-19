@@ -87,6 +87,15 @@ a = plot_grid(plots[['PeakV_Diff']][['Prior_RWD_bar']][['plot']],
 ggsave(paste('PriorRWD_diff_PeakV_RT.pdf',sep=''),plot =a, useDingbats = FALSE, width = 10, height = 5)
 
 
+a = plot_grid(plot_grid(plots[['PeakV']][['RPE_split_prior']][['plot']]+theme(legend.position = 'none'),
+                        plots[['RT']][['RPE_split_prior']][['plot']]+theme(legend.position = 'none'),
+                        plots[['PeakVinout']][['RPE_no_split']][['plot']],
+                        ncol = 2),
+              get_legend(plots[['PeakV']][['RPE_split_prior']][['plot']]),
+              ncol = 2,
+              rel_widths = c(10,1))
+ggsave(paste('RPE_group.pdf',sep=''),plot =a, useDingbats = FALSE, width = 8*1.1, height = 8)
+
 library(predictmeans)
 a = aggregate(DeltaRT ~ Probability + Subject, filt_data, mean)
 b = aggregate(DeltaRT ~ Probability, filt_data, mean)

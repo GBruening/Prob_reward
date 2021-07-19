@@ -132,21 +132,6 @@ def get_v_sign(data):
     data
         Appended dataset with redone velocities.
     """
-    
-    data.update({'rad_v': np.diff(data['P']),
-                 'px_sign': np.array(data['Right_HandX']),
-                 'py_sign': np.array(data['Right_HandY']),
-                 'vx_sign': np.array(data['Right_HandXVel']),
-                 'vy_sign': np.array(data['Right_HandYVel']),
-                 'ax_sign': np.array(data['Right_HandXAcc']),
-                 'ay_sign': np.array(data['Right_HandYAcc']),
-                 'px_abs': np.abs(data['Right_HandX']),
-                 'py_abs': np.abs(data['Right_HandY']),
-                 'vx_abs': np.abs(data['Right_HandXVel']),
-                 'vy_abs': np.abs(data['Right_HandYVel']),
-                 'ax_abs': np.array(data['Right_HandXAcc']),
-                 'ay_abs': np.array(data['Right_HandYAcc'])})
-
     v_sign = [v if k < data['vigor']['idx']['move_back'] else v*-1 for k, v in enumerate(data['Right_HandVel'])]
     a_sign = [a if k < data['vigor']['idx']['move_back'] else a*-1 for k, a in enumerate(data['Right_HandAcc'])]
     v_abs = [np.abs(v) for k, v in enumerate(data['Right_HandVel'])]
@@ -259,6 +244,19 @@ def get_mvttimes(data, target_data):
         Indexes for events.
     """
 
+    data.update({'rad_v': np.diff(data['P']*1000),
+                 'px_sign': np.array(data['Right_HandX']),
+                 'py_sign': np.array(data['Right_HandY']),
+                 'vx_sign': np.array(data['Right_HandXVel']),
+                 'vy_sign': np.array(data['Right_HandYVel']),
+                 'ax_sign': np.array(data['Right_HandXAcc']),
+                 'ay_sign': np.array(data['Right_HandYAcc']),
+                 'px_abs': np.abs(data['Right_HandX']),
+                 'py_abs': np.abs(data['Right_HandY']),
+                 'vx_abs': np.abs(data['Right_HandXVel']),
+                 'vy_abs': np.abs(data['Right_HandYVel']),
+                 'ax_abs': np.array(data['Right_HandXAcc']),
+                 'ay_abs': np.array(data['Right_HandYAcc'])})
     # Shift the data and calculate target locations if you haven't
     if 'X' not in data.keys():
         print('shifting')
@@ -306,7 +304,7 @@ def get_mvttimes(data, target_data):
     a = b
     
     for idx_onset in np.arange(b,50,-1):
-        if np.std(t_diff[idx_onset:idx_onset+50])<2e-3 and v[idx_onset]<.03:
+        if np.std(t_diff[idx_onset-50:idx_onset])<2e-3 and v[idx_onset]<.03:
             break
     try:
         idx_onset += 0
@@ -326,8 +324,6 @@ def get_mvttimes(data, target_data):
     #     plt.plot(x[idx_onset],y[idx_onset],'x',markersize=10,color = 'red')
     #     plt.show()
 
-    # Find peak velocity.
-    idx_peakv = np.argmax(v)
     
     # Find at target.
     if max(P) > 0.1:
@@ -352,6 +348,10 @@ def get_mvttimes(data, target_data):
         if np.std(t_diff[idx_offset:idx_offset+40])<2e-3 and v[idx_offset]<.03:
             break
 
+    # Find peak velocity.
+    idx_peakv = np.argmax(data['rad_v'][idx_onset:idx_moveback])+idx_onset
+    idx_retpeakv = np.argmin(data['rad_v'][idx_peakv:len(data['rad_v'])])+idx_peakv
+
     # Get movement duration
     move_dur = 0.001*(idx_attarget - idx_onset)
     
@@ -374,6 +374,7 @@ def get_mvttimes(data, target_data):
 
     vigor['idx'].update({'onset': idx_onset,
                          'peakv': idx_peakv,
+                         'retpeakv': idx_retpeakv,
                          'at_target': idx_attarget,
                          'offset': idx_offset,
                          'target_show': idx_targetshow,
@@ -466,9 +467,11 @@ def est_p(data):
             data[trial].update({'est_prob': 0,
                                 'rewarded': 0,
                                 't_since_reward': k,
+                                'diff_prob': 0,
                                 'r_prob': 0,
                                 'RPE': 0,
-                                'prior_RPE': 0})
+                                'prior_RPE': 0,
+                                'prior_RWD': 0})
         else:
             trial_in_block = (k-16) % 180
             if trial_in_block == 0:
@@ -496,7 +499,8 @@ def est_p(data):
             # Use just straight reward probabilities
             r_prob = block_probs[block-1][data[trial]['TRIAL']['TARGET']-1]
 
-            data[trial].update({'r_prob': r_prob})
+            data[trial].update({'r_prob': r_prob,
+                                'diff_prob': r_prob-data['trial_'+str(k)]['r_prob']})
 
             # RPE
             if len(data[trial]['EVENTS']['LABELS']) >= 3:
@@ -512,6 +516,7 @@ def est_p(data):
 
             data[trial].update({'RPE': np.round(RPE,2)})
             data[trial].update({'prior_RPE': data['trial_'+str(k)]['RPE']})
+            data[trial].update({'prior_RWD': data['trial_'+str(k)]['rewarded']})
     return data
 
 def calc_errors(data, target_data):
@@ -648,3 +653,5 @@ def squeezin(out, objs):
     for obj in objs:
         out[obj] = np.squeeze(out[obj])
     return out
+
+# %%
